@@ -1,0 +1,121 @@
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Wallet, Star, Clock, ArrowUpRight } from "lucide-react";
+import { useWorkerDashboard } from "@/lib/api-client";
+import { formatCurrency } from "@/lib/utils";
+
+export default function WorkerDashboardPage() {
+  const { data, isLoading } = useWorkerDashboard();
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading dashboard...</div>;
+  }
+
+  if (!data) return null;
+
+  const { earnings, activeProjectsCount, projects, rating, recentNotifications } = data;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
+        <p className="text-muted-foreground">Welcome back, here is what&apos;s happening with your projects.</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <Wallet className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(earnings?.thisMonth || 0)}</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+            <Clock className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeProjectsCount || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
+            <Wallet className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(earnings?.pending || 0)}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Performance Rating</CardTitle>
+            <Star className="h-4 w-4 text-amber-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{(rating?.overall || 0).toFixed(1)} / 5.0</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {/* Active Projects Widget */}
+        <Card className="col-span-4 shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle>Active Projects</CardTitle>
+            <CardDescription>You have {activeProjectsCount || 0} projects currently in progress.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {projects?.map((project: any) => (
+              <div key={project.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{project.title}</div>
+                    <div className="text-xs text-muted-foreground">{project.clientName || 'Agency Project'}</div>
+                  </div>
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                    {project.status.replace("_", " ")}
+                  </Badge>
+                </div>
+                <Progress value={project.progress || 0} className="h-2" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Recent Notifications */}
+        <Card className="col-span-3 shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Your latest notifications and updates.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recentNotifications?.map((notif: any) => (
+              <div key={notif.id} className="flex gap-4 items-start">
+                <div className={`w-2 h-2 mt-2 rounded-full ${notif.isRead ? 'bg-slate-300 dark:bg-slate-700' : 'bg-emerald-500'}`} />
+                <div>
+                  <p className="text-sm font-medium">{notif.title || notif.type}</p>
+                  <p className="text-xs text-muted-foreground">{notif.message}</p>
+                  <span className="text-[10px] text-muted-foreground">{new Date(notif.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+            {(!recentNotifications || recentNotifications.length === 0) && (
+              <div className="text-sm text-muted-foreground">No recent activity.</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

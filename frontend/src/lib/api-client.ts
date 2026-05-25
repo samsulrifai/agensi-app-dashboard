@@ -1,0 +1,126 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+const fetcher = async (url: string, options?: RequestInit) => {
+  const res = await fetch(url, options);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "An error occurred");
+  }
+  return data.data || data;
+};
+
+// -- Worker Queries --
+export const useWorkerDashboard = () => useQuery({
+  queryKey: ['worker-dashboard'],
+  queryFn: async () => {
+    const res = await fetch('/api/workers/me/dashboard');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error');
+    return json.data; // { earnings, activeProjectsCount, projects, rating, ... }
+  },
+});
+
+export const useWorkerProjects = () => useQuery({
+  queryKey: ['worker-projects'],
+  queryFn: async () => {
+    const res = await fetch('/api/workers/me/projects');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error');
+    return json.data?.projects ?? json.data ?? []; // array of projects
+  },
+});
+
+export const useWorkerInvoices = () => useQuery({
+  queryKey: ['worker-invoices'],
+  queryFn: async () => {
+    const res = await fetch('/api/invoices');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error');
+    return json.data?.invoices ?? json.data ?? []; // array of invoices
+  },
+});
+
+export const useWorkerStats = () => useQuery({
+  queryKey: ['worker-stats'],
+  queryFn: async () => {
+    const res = await fetch('/api/workers/me/stats');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error');
+    return json.data;
+  },
+});
+
+
+// -- Admin Queries --
+export const useAdminDashboard = () => useQuery({
+  queryKey: ['admin-dashboard'],
+  queryFn: () => fetcher('/api/admin/dashboard'),
+});
+
+export const useAdminProjects = () => useQuery({
+  queryKey: ['admin-projects'],
+  queryFn: () => fetcher('/api/admin/projects'),
+});
+
+export const useAdminWorkers = () => useQuery({
+  queryKey: ['admin-workers'],
+  queryFn: () => fetcher('/api/admin/workers'),
+});
+
+export const useAdminInvoices = () => useQuery({
+  queryKey: ['admin-invoices'],
+  queryFn: () => fetcher('/api/admin/invoices'),
+});
+
+// -- Mutations --
+export const useStartTimer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => fetcher(`/api/tasks/${taskId}/time/start`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['worker-projects'] }),
+  });
+};
+
+export const useCompleteTask = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => fetcher(`/api/tasks/${taskId}/complete`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['worker-projects'] }),
+  });
+};
+
+export const useCreateProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => fetcher('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-projects'] }),
+  });
+};
+
+export const useInviteWorker = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => fetcher('/api/workers/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-workers'] }),
+  });
+};
+
+export const useSubmitInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => fetcher('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['worker-invoices'] }),
+  });
+};
