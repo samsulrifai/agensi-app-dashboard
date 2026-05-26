@@ -88,7 +88,6 @@ function getDeadlineLabel(deadline: string) {
   if (daysLeft <= 3) {
     return (
       <div className="text-xs font-medium text-amber-600 dark:text-amber-400">
-      <title>Admin Projects</title>
         {daysLeft} days left
       </div>
     );
@@ -332,6 +331,7 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <title>Admin Projects</title>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Project Management</h2>
@@ -413,7 +413,7 @@ export default function AdminProjectsPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon"><Filter className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => toast.info("Filter coming soon")}><Filter className="h-4 w-4" /></Button>
         </div>
         <Tabs defaultValue="kanban" className="w-full sm:w-auto self-end sm:self-auto">
           <TabsList>
@@ -442,7 +442,7 @@ export default function AdminProjectsPage() {
                       {isLoading ? "—" : (grouped[col.key]?.length ?? 0)}
                     </Badge>
                   </h3>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setIsCreateModalOpen(true); }}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>

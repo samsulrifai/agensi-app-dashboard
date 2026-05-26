@@ -191,7 +191,7 @@ export default function AdminWorkersPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="icon"><Filter className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => toast.info("Filter coming soon")}><Filter className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-2">
             <Badge
@@ -313,10 +313,10 @@ export default function AdminWorkersPage() {
                     {/* Actions */}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => window.location.href = `mailto:${worker.email}`}>
                           <Mail className="h-4 w-4 text-slate-500" />
                         </Button>
-                        <Button variant="outline" size="sm">View Profile</Button>
+                        <Button variant="outline" size="sm" onClick={() => toast.info(`${worker.fullName} — ${worker.email} — ${worker._count.projectWorkers} project(s)`)}>View Profile</Button>
                       </div>
                     </TableCell>
                   </TableRow>

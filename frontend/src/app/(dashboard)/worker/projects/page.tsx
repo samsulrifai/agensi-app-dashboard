@@ -90,8 +90,8 @@ export default function WorkerProjectsPage() {
               <MoreVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Contact Admin</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast.info(`Project: ${project.title}`)}>View Details</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast.info("Contact admin feature coming soon")}>Contact Admin</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -218,7 +218,7 @@ export default function WorkerProjectsPage() {
             </DialogContent>
           </Dialog>
           
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" onClick={() => toast.info("Discussion feature coming soon")}>
             <MessageSquare className="h-4 w-4 mr-2" /> Discussion
           </Button>
         </CardFooter>

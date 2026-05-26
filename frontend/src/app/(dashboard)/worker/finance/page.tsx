@@ -281,7 +281,7 @@ export default function WorkerFinancePage() {
                     <TableCell>{formatCurrency(invoice.amount)}</TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => toast.info(`Download INV-${invoice.id.substring(0,4).toUpperCase()}`)}><Download className="h-4 w-4" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}

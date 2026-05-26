@@ -187,7 +187,7 @@ export default function AdminFinancePage() {
           <h2 className="text-2xl font-bold tracking-tight">Finance &amp; Approvals</h2>
           <p className="text-muted-foreground">Review worker invoices and manage payouts.</p>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => { toast.info("Exporting CSV..."); window.open("/api/reports/financial/export?format=csv", "_blank"); }}>
           <Download className="h-4 w-4 mr-2" /> Export CSV
         </Button>
       </div>
