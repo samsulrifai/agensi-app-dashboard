@@ -61,10 +61,12 @@ export function Sidebar({ role = 'worker' }: SidebarProps) {
         </nav>
       </ScrollArea>
       <div className="mt-auto p-4 border-t border-slate-800">
-        <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800 gap-3">
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
+        <Link href={`/${inferredRole}/settings`} className="w-full">
+          <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800 gap-3">
+            <Settings className="h-4 w-4" />
+            Settings
+          </Button>
+        </Link>
         <Button 
           variant="ghost" 
           className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800 gap-3"

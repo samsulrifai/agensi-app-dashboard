@@ -143,6 +143,15 @@ export const useRateWorker = () => {
   });
 };
 
+export const useGlobalSearch = (query: string) => {
+  return useQuery({
+    queryKey: ['global-search', query],
+    queryFn: () => fetcher(`/api/search?q=${encodeURIComponent(query)}`),
+    enabled: query.length >= 2,
+    staleTime: 60 * 1000,
+  });
+};
+
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({

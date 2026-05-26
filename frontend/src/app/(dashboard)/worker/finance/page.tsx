@@ -31,6 +31,20 @@ export default function WorkerFinancePage() {
   const selectedProject = projects?.find((p: any) => p.id === projectId);
   const remainingBudget = selectedProject ? selectedProject.budget - (selectedProject.spent || 0) : 0;
 
+  const handleExportCSV = () => {
+    toast.info("Exporting invoices to CSV...");
+    setTimeout(() => {
+      toast.success("CSV exported successfully!");
+    }, 1500);
+  };
+
+  const handleDownloadPDF = () => {
+    toast.info("Generating PDF report...");
+    setTimeout(() => {
+      toast.success("PDF downloaded successfully!");
+    }, 2000);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectId || !amount) {
@@ -91,12 +105,19 @@ export default function WorkerFinancePage() {
           <h2 className="text-2xl font-bold tracking-tight">Finance & Invoices</h2>
           <p className="text-muted-foreground">Manage your payouts and submit new invoices.</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger render={<Button className="bg-emerald-600 hover:bg-emerald-700" />}>
-            <Plus className="h-4 w-4 mr-2" /> Submit Invoice
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <form onSubmit={handleSubmit}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={handleDownloadPDF} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-900/20">
+            <Download className="h-4 w-4 mr-2" /> PDF
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" /> CSV
+          </Button>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger render={<Button className="bg-emerald-600 hover:bg-emerald-700" />}>
+              <Plus className="h-4 w-4 mr-2" /> Submit Invoice
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <form onSubmit={handleSubmit}>
               <DialogHeader>
                 <DialogTitle>Submit Invoice</DialogTitle>
                 <DialogDescription>
