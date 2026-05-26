@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Plus, Filter, Kanban, List } from "lucide-react";
+import { useAdminProjects, useCreateProject } from "@/lib/api-client";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -29,6 +37,11 @@ interface Project {
   tasks?: { status: string }[];
   projectWorkers?: ProjectWorker[];
   completedAt?: string;
+  progress?: number;
+  daysUntilDeadline?: number;
+  isUrgent?: boolean;
+  taskCount?: number;
+  workers?: { id: string; fullName: string; avatarUrl?: string; roleInProject?: string }[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -179,22 +192,49 @@ const COLUMNS: ColumnConfig[] = [
 
 export default function AdminProjectsPage() {
   const [search, setSearch] = useState("");
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["projects"],
-    queryFn: async () => {
-      const res = await fetch("/api/projects", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch projects");
-      const json = await res.json();
-      return json.data.projects as Project[];
-    },
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    clientName: "",
+    description: "",
+    budget: "",
+    deadline: "",
+    priority: "medium",
   });
+
+  const { data: projectsData, isLoading, isError } = useAdminProjects();
+  const createProject = useCreateProject();
+
+  const handleCreateProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.clientName || !formData.budget || !formData.deadline) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    createProject.mutate({
+      ...formData,
+      budget: Number(formData.budget),
+      deadline: formData.deadline + "T23:59:59Z", // End of day UTC
+    }, {
+      onSuccess: () => {
+        toast.success("Project created successfully!");
+        setIsCreateModalOpen(false);
+        setFormData({ title: "", clientName: "", description: "", budget: "", deadline: "", priority: "medium" });
+      },
+      onError: (err: any) => {
+        toast.error(err.message || "Failed to create project");
+      }
+    });
+  };
+
+  const data = projectsData?.projects || [];
 
   // Group projects by status
   const grouped = COLUMNS.reduce<Record<string, Project[]>>(
     (acc, col) => {
       const projects = (data ?? []).filter(
-        (p) =>
+        (p: Project) =>
           p.status === col.key &&
           (search === "" ||
             p.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -213,12 +253,71 @@ export default function AdminProjectsPage() {
           <h2 className="text-2xl font-bold tracking-tight">Project Management</h2>
           <p className="text-muted-foreground">Create, assign, and track all agency projects.</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" /> New Project
-        </Button>
+        
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogTrigger render={<Button className="bg-blue-600 hover:bg-blue-700" />}>
+            <Plus className="h-4 w-4 mr-2" /> New Project
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <form onSubmit={handleCreateProject}>
+              <DialogHeader>
+                <DialogTitle>Create New Project</DialogTitle>
+                <DialogDescription>
+                  Set up a new project. You can assign workers later.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Project Name</Label>
+                    <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required placeholder="e.g. Website Redesign" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="clientName">Client Name</Label>
+                    <Input id="clientName" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} required placeholder="e.g. Acme Corp" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Project details and objectives..." />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">Budget (Rp)</Label>
+                    <Input id="budget" type="number" value={formData.budget} onChange={e => setFormData({...formData, budget: e.target.value})} required placeholder="e.g. 5000000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="deadline">Deadline</Label>
+                    <Input id="deadline" type="date" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select value={formData.priority} onValueChange={v => setFormData({...formData, priority: v ?? formData.priority})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={createProject.isPending} className="bg-blue-600 hover:bg-blue-700 w-full">
+                  {createProject.isPending ? "Creating..." : "Create Project"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Tabs defaultValue="list" className="space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -240,46 +339,103 @@ export default function AdminProjectsPage() {
         </Tabs>
       </div>
 
-      {isError && (
-        <div className="text-sm text-red-500 text-center py-4">
-          Failed to load projects. Please try again.
-        </div>
-      )}
-
-      {/* Kanban Board */}
-      <div className="grid md:grid-cols-4 gap-6 items-start overflow-x-auto pb-4">
-        {COLUMNS.map((col) => (
-          <div key={col.key} className="flex flex-col gap-4 min-w-[280px]">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${col.dotClass}`} />
-                {col.label}
-                <Badge variant="secondary" className="ml-1">
-                  {isLoading ? "—" : (grouped[col.key]?.length ?? 0)}
-                </Badge>
-              </h3>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {isLoading ? (
-              <>
-                <SkeletonCard />
-                <SkeletonCard />
-              </>
-            ) : grouped[col.key]?.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
-                No projects
-              </div>
-            ) : (
-              grouped[col.key].map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))
-            )}
+        {isError && (
+          <div className="text-sm text-red-500 text-center py-4">
+            Failed to load projects. Please try again.
           </div>
-        ))}
-      </div>
+        )}
+
+        <TabsContent value="kanban" className="m-0">
+          {/* Kanban Board */}
+          <div className="grid md:grid-cols-4 gap-6 items-start overflow-x-auto pb-4">
+            {COLUMNS.map((col) => (
+              <div key={col.key} className="flex flex-col gap-4 min-w-[280px]">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${col.dotClass}`} />
+                    {col.label}
+                    <Badge variant="secondary" className="ml-1">
+                      {isLoading ? "—" : (grouped[col.key]?.length ?? 0)}
+                    </Badge>
+                  </h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {isLoading ? (
+                  <>
+                    <SkeletonCard />
+                    <SkeletonCard />
+                  </>
+                ) : grouped[col.key]?.length === 0 ? (
+                  <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
+                    No projects
+                  </div>
+                ) : (
+                  grouped[col.key].map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))
+                )}
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="list" className="m-0">
+          <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="pl-4">Project Name</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Deadline</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead className="text-right pr-4">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground animate-pulse">Loading projects...</TableCell>
+                    </TableRow>
+                  ) : data.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No projects found.</TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((project: Project) => (
+                      <TableRow key={project.id}>
+                        <TableCell className="pl-4 font-medium">{project.title}</TableCell>
+                        <TableCell>{project.clientName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {project.status.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{getPriorityBadge(project.priority)}</TableCell>
+                        <TableCell>{getDeadlineLabel(project.deadline)}</TableCell>
+                        <TableCell className="w-[150px]">
+                          <div className="flex items-center gap-2">
+                            <Progress value={project.progress || 0} className="h-2" />
+                            <span className="text-xs text-muted-foreground">{project.progress || 0}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
+                          <Button variant="ghost" size="sm">View</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

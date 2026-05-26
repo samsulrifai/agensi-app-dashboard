@@ -19,14 +19,22 @@ export async function GET(request: NextRequest) {
 
     const status = searchParams.get("status");
     const workerId = searchParams.get("workerId");
+    const projectId = searchParams.get("projectId");
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
     const where: any = {
+      // Worker hanya bisa lihat invoice miliknya
       ...(role === "worker" ? { workerId: userId } : {}),
-      ...(status ? { status } : {}),
+      // Filter by status (bisa multi: "pending,approved")
+      ...(status
+        ? { status: { in: status.split(",") as any[] } }
+        : {}),
+      // Admin: filter by workerId
       ...(role === "admin" && workerId ? { workerId } : {}),
+      // Filter by projectId
+      ...(projectId ? { projectId } : {}),
     };
 
     const [invoices, total] = await Promise.all([
@@ -52,12 +60,14 @@ export async function GET(request: NextRequest) {
       total,
       page,
       limit,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error("[GET /api/invoices]", error);
     return err("Terjadi kesalahan server", 500);
   }
 }
+
 
 const InvoiceSchema = z.object({
   projectId: z.string().uuid("Project ID tidak valid"),

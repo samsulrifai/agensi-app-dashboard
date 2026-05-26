@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Filter, Star, Briefcase, Mail } from "lucide-react";
+import { Search, Filter, Star, Briefcase, Mail, Plus } from "lucide-react";
+import { useAdminWorkers, useInviteWorker } from "@/lib/api-client";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,17 +122,32 @@ function SkeletonRow() {
 
 export default function AdminWorkersPage() {
   const [search, setSearch] = useState('');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ fullName: '', email: '', password: '', phone: '' });
 
-  const { data, isLoading, isError } = useQuery<WorkersResponse>({
-    queryKey: ['workers'],
-    queryFn: async () => {
-      const res = await fetch('/api/workers', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch workers');
-      return res.json();
-    },
-  });
+  const { data: workersData, isLoading, isError } = useAdminWorkers();
+  const inviteWorker = useInviteWorker();
 
-  const allWorkers: Worker[] = data?.data?.workers ?? [];
+  const handleInviteWorker = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.email || !formData.password) {
+      toast.error("Please fill in required fields.");
+      return;
+    }
+
+    inviteWorker.mutate(formData, {
+      onSuccess: () => {
+        toast.success("Worker invited successfully!");
+        setIsInviteModalOpen(false);
+        setFormData({ fullName: '', email: '', password: '', phone: '' });
+      },
+      onError: (err: any) => {
+        toast.error(err.message || "Failed to invite worker");
+      }
+    });
+  };
+
+  const allWorkers: Worker[] = workersData?.workers ?? [];
 
   // Client-side search filter
   const filtered = allWorkers.filter((w) => {
@@ -150,7 +169,45 @@ export default function AdminWorkersPage() {
           <h2 className="text-2xl font-bold tracking-tight">Worker Directory</h2>
           <p className="text-muted-foreground">Manage your team, view workloads, and track performance.</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700">Invite Worker</Button>
+        
+        <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+          <DialogTrigger render={<Button className="bg-emerald-600 hover:bg-emerald-700" />}>
+            <Plus className="h-4 w-4 mr-2" /> Invite Worker
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <form onSubmit={handleInviteWorker}>
+              <DialogHeader>
+                <DialogTitle>Invite New Worker</DialogTitle>
+                <DialogDescription>
+                  Send an invitation to a new worker to join the platform.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input id="fullName" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} required placeholder="e.g. John Doe" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required placeholder="john@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Temporary Password</Label>
+                  <Input id="password" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <Input id="phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="+62 812..." />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={inviteWorker.isPending} className="bg-emerald-600 hover:bg-emerald-700 w-full">
+                  {inviteWorker.isPending ? "Inviting..." : "Send Invitation"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="shadow-sm border-slate-200 dark:border-slate-800">

@@ -60,9 +60,14 @@ export async function GET(request: NextRequest) {
         isActive: w.isActive,
         phone: w.phone,
         activeProjects,
-        isOverloaded: activeProjects >= 4, // PRD: alert jika > N proyek aktif
+        isOverloaded: activeProjects >= 4,
         avgRating: Math.round(avgRating * 10) / 10,
         totalReviews: w.workerRatings.length,
+        // Fields keyed as _count for frontend compatibility
+        _count: {
+          projectWorkers: activeProjects,
+          ratings: w.workerRatings.length,
+        },
         currentProjects: w.projectWorkers.map((pw) => ({
           id: pw.project.id,
           title: pw.project.title,
@@ -71,7 +76,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return ok(result);
+    return ok({ workers: result, total: result.length });
   } catch (error) {
     console.error("[GET /api/workers]", error);
     return err("Terjadi kesalahan server", 500);

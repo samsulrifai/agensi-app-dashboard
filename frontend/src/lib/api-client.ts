@@ -59,17 +59,17 @@ export const useAdminDashboard = () => useQuery({
 
 export const useAdminProjects = () => useQuery({
   queryKey: ['admin-projects'],
-  queryFn: () => fetcher('/api/admin/projects'),
+  queryFn: () => fetcher('/api/projects'),
 });
 
 export const useAdminWorkers = () => useQuery({
   queryKey: ['admin-workers'],
-  queryFn: () => fetcher('/api/admin/workers'),
+  queryFn: () => fetcher('/api/workers'),
 });
 
 export const useAdminInvoices = () => useQuery({
   queryKey: ['admin-invoices'],
-  queryFn: () => fetcher('/api/admin/invoices'),
+  queryFn: () => fetcher('/api/invoices'),
 });
 
 // -- Mutations --
@@ -104,10 +104,10 @@ export const useCreateProject = () => {
 export const useInviteWorker = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => fetcher('/api/workers/invite', {
+    mutationFn: (data: any) => fetcher('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, role: "worker" }),
     }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-workers'] }),
   });
