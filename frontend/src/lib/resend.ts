@@ -5,7 +5,9 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-const FROM_EMAIL = "noreply@yourdomain.com"; // Ganti dengan domain terverifikasi di Resend
+// Pakai domain default Resend untuk development.
+// Di production: set env var RESEND_FROM_EMAIL dengan domain terverifikasi Anda
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
 interface SendEmailOptions {
   to: string;
