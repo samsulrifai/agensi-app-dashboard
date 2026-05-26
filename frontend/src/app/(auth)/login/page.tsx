@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+// signIn handled via direct fetch to /api/auth/callback/credentials
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -21,28 +21,39 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
+      // Step 1: Get CSRF token
+      const csrfRes = await fetch("/api/auth/csrf");
+      const { csrfToken } = await csrfRes.json();
+
+      // Step 2: POST credentials directly
+      const res = await fetch("/api/auth/callback/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          email,
+          password,
+          csrfToken,
+          redirect: "false",
+          json: "true",
+        }),
+        credentials: "include",
       });
 
-      if (res?.error) {
-        toast.error(res.error === "Configuration" ? "Login gagal. Periksa email dan password." : res.error);
-      } else if (res?.ok) {
-        toast.success("Login successful! Redirecting...");
-        // Fetch session to determine role, then redirect to correct dashboard
-        const sessionRes = await fetch("/api/auth/session");
-        const session = await sessionRes.json();
-        const role = session?.user?.role;
+      // Step 3: Check if login succeeded by fetching session
+      const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
+      const session = await sessionRes.json();
+
+      if (session?.user?.email) {
+        toast.success("Login berhasil! Redirecting...");
+        const role = session.user.role;
         const target = role === "admin" ? "/admin/dashboard" : "/worker/dashboard";
         window.location.href = target;
       } else {
-        toast.error("Login gagal. Periksa email dan password.");
+        toast.error("Email atau password salah");
       }
     } catch (err: any) {
       console.error("[LOGIN] Error:", err);
-      toast.error("An unexpected error occurred");
+      toast.error("Terjadi kesalahan. Coba lagi.");
     } finally {
       setLoading(false);
     }
