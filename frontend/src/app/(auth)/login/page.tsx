@@ -21,20 +21,22 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log("[LOGIN] Attempting signIn with:", email);
       const res = await signIn("credentials", {
         redirect: false,
         email,
         password,
       });
-      console.log("[LOGIN] signIn result:", JSON.stringify(res));
 
       if (res?.error) {
-        toast.error(res.error === "Configuration" ? "Login gagal. Coba lagi." : res.error);
+        toast.error(res.error === "Configuration" ? "Login gagal. Periksa email dan password." : res.error);
       } else if (res?.ok) {
-        toast.success("Login successful");
-        router.push("/");
-        router.refresh();
+        toast.success("Login successful! Redirecting...");
+        // Fetch session to determine role, then redirect to correct dashboard
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+        const role = session?.user?.role;
+        const target = role === "admin" ? "/admin/dashboard" : "/worker/dashboard";
+        window.location.href = target;
       } else {
         toast.error("Login gagal. Periksa email dan password.");
       }
