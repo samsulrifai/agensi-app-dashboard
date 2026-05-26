@@ -161,7 +161,8 @@ export default function AdminWorkersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Temporary Password</Label>
-                  <Input id="password" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                  <Input id="password" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required minLength={8} placeholder="Min. 8 karakter" />
+                  <p className="text-xs text-muted-foreground">Minimal 8 karakter</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number (Optional)</Label>

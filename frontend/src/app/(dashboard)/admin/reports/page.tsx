@@ -18,17 +18,47 @@ const fmt = (n: number) =>
 export default function AdminReportsPage() {
   const [months, setMonths] = useState("6");
 
-  const handleExport = () => {
-    window.open(`/api/reports/financial/export?format=csv&months=${months}`, '_blank');
+  const handleExport = async () => {
+    toast.info("Exporting CSV...");
+    try {
+      const res = await fetch(`/api/reports/financial/export?format=csv&months=${months}`, { credentials: 'include' });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `laporan-keuangan-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("CSV downloaded!");
+    } catch {
+      toast.error("Failed to export CSV");
+    }
   };
 
-  const handlePrint = () => window.print();
-  
+  const handlePrint = () => {
+    // Add print styles to only print report content
+    const style = document.createElement("style");
+    style.id = "print-styles";
+    style.textContent = `
+      @media print {
+        body * { visibility: hidden; }
+        #report-content, #report-content * { visibility: visible; }
+        #report-content { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+        nav, aside, header, [data-slot="sidebar"] { display: none !important; }
+      }
+    `;
+    document.head.appendChild(style);
+    window.print();
+    // Cleanup after print
+    setTimeout(() => { document.getElementById("print-styles")?.remove(); }, 1000);
+  };
+
   const handleDownloadPDF = () => {
-    toast.info("Generating PDF report...");
-    setTimeout(() => {
-      toast.success("PDF downloaded successfully!");
-    }, 2000);
+    toast.info("Opening print dialog — choose 'Save as PDF' as destination");
+    handlePrint();
   };
 
   const { data, isLoading } = useQuery({
@@ -52,7 +82,7 @@ export default function AdminReportsPage() {
   const byClient = data?.byClient ?? [];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div id="report-content" className="space-y-6 animate-in fade-in duration-500">
       <title>Admin Reports</title>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

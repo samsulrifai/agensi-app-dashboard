@@ -4,7 +4,8 @@ const fetcher = async (url: string, options?: RequestInit) => {
   const res = await fetch(url, options);
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.error || "An error occurred");
+    const msg = typeof data.error === 'string' ? data.error : data.error?.message || "An error occurred";
+    throw new Error(msg);
   }
   return data.data || data;
 };

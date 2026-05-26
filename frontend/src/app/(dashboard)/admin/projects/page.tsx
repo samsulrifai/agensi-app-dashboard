@@ -398,7 +398,7 @@ export default function AdminProjectsPage() {
         </Dialog>
       </div>
 
-      <Tabs defaultValue="list" className="space-y-6">
+      <Tabs defaultValue="kanban" className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
@@ -413,12 +413,10 @@ export default function AdminProjectsPage() {
           </div>
           <Button variant="outline" size="icon" onClick={() => toast.info("Filter coming soon")}><Filter className="h-4 w-4" /></Button>
         </div>
-        <Tabs defaultValue="kanban" className="w-full sm:w-auto self-end sm:self-auto">
-          <TabsList>
-            <TabsTrigger value="kanban"><Kanban className="h-4 w-4 mr-2" /> Board</TabsTrigger>
-            <TabsTrigger value="list"><List className="h-4 w-4 mr-2" /> List</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <TabsList>
+          <TabsTrigger value="kanban"><Kanban className="h-4 w-4 mr-2" /> Board</TabsTrigger>
+          <TabsTrigger value="list"><List className="h-4 w-4 mr-2" /> List</TabsTrigger>
+        </TabsList>
       </div>
 
         {isError && (

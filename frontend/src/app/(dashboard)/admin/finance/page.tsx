@@ -187,7 +187,25 @@ export default function AdminFinancePage() {
           <h2 className="text-2xl font-bold tracking-tight">Finance &amp; Approvals</h2>
           <p className="text-muted-foreground">Review worker invoices and manage payouts.</p>
         </div>
-        <Button variant="outline" onClick={() => { toast.info("Exporting CSV..."); window.open("/api/reports/financial/export?format=csv", "_blank"); }}>
+        <Button variant="outline" onClick={async () => {
+          toast.info("Exporting CSV...");
+          try {
+            const res = await fetch("/api/reports/financial/export?format=csv", { credentials: "include" });
+            if (!res.ok) throw new Error("Export failed");
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `laporan-keuangan-${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success("CSV downloaded!");
+          } catch (e: any) {
+            toast.error(e.message || "Failed to export CSV");
+          }
+        }}>
           <Download className="h-4 w-4 mr-2" /> Export CSV
         </Button>
       </div>
