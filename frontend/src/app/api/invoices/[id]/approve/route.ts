@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ok, err } from "@/lib/api-helpers";
 import { sendEmail } from "@/lib/resend";
+import { broadcastNotification } from "@/lib/supabase-realtime";
+import { invalidateDashboard, invalidateReports } from "@/lib/cache";
 
 /**
  * PUT /api/invoices/[id]/approve
@@ -55,7 +57,7 @@ export async function PUT(
     });
 
     // Notifikasi in-app
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId: invoice.workerId,
         type: "invoice_approved",
@@ -64,6 +66,19 @@ export async function PUT(
         metadata: { invoiceId: id },
       },
     });
+
+    // Realtime broadcast
+    broadcastNotification(invoice.workerId, {
+      id: notification.id,
+      type: "invoice_approved",
+      title: notification.title,
+      body: notification.body,
+      metadata: { invoiceId: id },
+    }).catch(console.error);
+
+    // Invalidate dashboard/reports cache
+    invalidateDashboard();
+    invalidateReports();
 
     // Audit log
     await prisma.auditLog.create({

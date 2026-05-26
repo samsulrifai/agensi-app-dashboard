@@ -6,12 +6,14 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Play, FileUp, MessageSquare, MoreVertical, Calendar, History } from "lucide-react";
+import { Clock, Play, FileUp, MessageSquare, MoreVertical, Calendar, History, Folder } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { useWorkerProjects, useStartTimer, useStopTimer, useCompleteTask, useActiveTimer } from "@/lib/api-client";
 import { FileUploader } from "@/components/ui/file-uploader";
 import { TimeTracker } from "@/components/time-tracker";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
 export default function WorkerProjectsPage() {
@@ -23,7 +25,12 @@ export default function WorkerProjectsPage() {
   const completeTask = useCompleteTask();
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading projects...</div>;
+    return (
+      <div className="space-y-6">
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
   }
 
   const activeProjects = projects?.filter((p: any) => p.status === 'in_progress' || p.status === 'todo') || [];
@@ -53,11 +60,18 @@ export default function WorkerProjectsPage() {
 
   const renderProjectList = (projectList: any[]) => {
     if (projectList.length === 0) {
-      return <div className="text-center p-8 text-muted-foreground border rounded-lg border-dashed mt-6">No projects found.</div>;
+      return (
+        <EmptyState 
+          icon={<Folder className="h-8 w-8" />}
+          title="No projects found"
+          description="You don't have any projects in this category at the moment."
+          className="mt-6"
+        />
+      );
     }
     
     return projectList.map((project) => (
-      <Card key={project.id} className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6 mt-6">
+      <Card key={project.id} className="border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden mb-6 mt-6">
         <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-4 flex justify-between items-start">
           <div>
             <div className="flex items-center gap-3">
@@ -136,7 +150,7 @@ export default function WorkerProjectsPage() {
                   </Button>
                   
                   <Dialog>
-                    <DialogTrigger asChild>
+                    <DialogTrigger>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
                         <History className="h-4 w-4 text-muted-foreground" />
                       </Button>
@@ -212,12 +226,10 @@ export default function WorkerProjectsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">My Projects</h2>
-          <p className="text-muted-foreground">Manage your active tasks and track your time.</p>
-        </div>
+    <div className="space-y-6 max-w-5xl animate-in fade-in duration-500">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">My Projects</h2>
+        <p className="text-muted-foreground">Manage your assigned projects and track your tasks.</p>
       </div>
 
       <Tabs defaultValue="active" className="w-full">

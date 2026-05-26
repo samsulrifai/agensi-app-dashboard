@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ok, err } from "@/lib/api-helpers";
 import { sendEmail } from "@/lib/resend";
+import { broadcastNotification } from "@/lib/supabase-realtime";
+import { invalidateDashboard } from "@/lib/cache";
 
 const RejectSchema = z.object({
   reason: z.string().min(5, "Alasan penolakan minimal 5 karakter"),
@@ -47,7 +49,7 @@ export async function PUT(
     });
 
     // Notifikasi in-app
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId: invoice.workerId,
         type: "invoice_rejected",
@@ -56,6 +58,16 @@ export async function PUT(
         metadata: { invoiceId: id },
       },
     });
+
+    // Realtime broadcast + cache invalidation
+    broadcastNotification(invoice.workerId, {
+      id: notification.id,
+      type: "invoice_rejected",
+      title: notification.title,
+      body: notification.body,
+      metadata: { invoiceId: id },
+    }).catch(console.error);
+    invalidateDashboard();
 
     // Audit log
     await prisma.auditLog.create({

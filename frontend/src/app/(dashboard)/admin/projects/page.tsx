@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -190,7 +192,7 @@ function RateWorkerDialog({ project }: { project: Project }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button size="sm" variant="outline" className="w-full gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-900/20">
           <Star className="h-4 w-4" /> Rate Worker
         </Button>
@@ -241,23 +243,7 @@ function RateWorkerDialog({ project }: { project: Project }) {
 
 // ─── Skeleton Card ────────────────────────────────────────────────────────────
 
-function SkeletonCard() {
-  return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-4 space-y-3 animate-pulse">
-      <div className="h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded" />
-      <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
-      <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded" />
-      <div className="flex justify-between items-center pt-2">
-        <div className="h-3 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
-        <div className="flex -space-x-2">
-          <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-background" />
-          <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-background" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
+// Removed local SkeletonCard
 // ─── Kanban Column ────────────────────────────────────────────────────────────
 
 interface ColumnConfig {
@@ -332,7 +318,7 @@ export default function AdminProjectsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Project Management</h2>
@@ -450,11 +436,11 @@ export default function AdminProjectsPage() {
 
                 {isLoading ? (
                   <>
-                    <SkeletonCard />
-                    <SkeletonCard />
+                    <SkeletonCard className="p-4" />
+                    <SkeletonCard className="p-4" />
                   </>
                 ) : grouped[col.key]?.length === 0 ? (
-                  <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
+                  <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50/50 dark:bg-slate-900/20">
                     No projects
                   </div>
                 ) : (
@@ -468,9 +454,9 @@ export default function AdminProjectsPage() {
         </TabsContent>
 
         <TabsContent value="list" className="m-0">
-          <Card className="shadow-sm border-slate-200 dark:border-slate-800">
-            <CardContent className="p-0">
-              <Table>
+          <Card className="shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
+            <CardContent className="p-0 overflow-x-auto">
+              <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="pl-4">Project Name</TableHead>
@@ -485,11 +471,23 @@ export default function AdminProjectsPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground animate-pulse">Loading projects...</TableCell>
+                      <TableCell colSpan={7} className="p-0">
+                        <SkeletonTable rows={5} />
+                      </TableCell>
                     </TableRow>
                   ) : data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No projects found.</TableCell>
+                      <TableCell colSpan={7} className="p-8">
+                        <EmptyState 
+                          icon={<Kanban className="h-8 w-8" />}
+                          title="No projects found"
+                          description="Get started by creating a new project."
+                          action={{
+                            label: "Create Project",
+                            onClick: () => setIsCreateModalOpen(true)
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
                   ) : (
                     data.map((project: Project) => (

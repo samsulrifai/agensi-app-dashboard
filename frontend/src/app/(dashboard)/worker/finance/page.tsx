@@ -15,6 +15,9 @@ import { useWorkerInvoices, useWorkerProjects, useSubmitInvoice } from "@/lib/ap
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { FileUploader } from "@/components/ui/file-uploader";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FileText } from "lucide-react";
 
 export default function WorkerFinancePage() {
   const { data: invoices, isLoading } = useWorkerInvoices();
@@ -99,7 +102,7 @@ export default function WorkerFinancePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Finance & Invoices</h2>
@@ -234,11 +237,19 @@ export default function WorkerFinancePage() {
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 overflow-x-auto">
           {isLoading ? (
-            <div className="py-8 text-center text-muted-foreground animate-pulse">Loading invoices...</div>
+            <Table className="min-w-[800px]">
+              <TableBody>
+                <TableRow>
+                  <TableCell className="p-0">
+                    <SkeletonTable rows={5} />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           ) : (
-            <Table>
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Invoice ID</TableHead>
@@ -252,7 +263,13 @@ export default function WorkerFinancePage() {
               <TableBody>
                 {invoices?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No invoices found.</TableCell>
+                    <TableCell colSpan={6} className="p-8">
+                      <EmptyState 
+                        icon={<FileText className="h-8 w-8" />}
+                        title="No invoices yet"
+                        description="Submit your first invoice to get paid."
+                      />
+                    </TableCell>
                   </TableRow>
                 )}
                 {invoices?.map((invoice: any) => (

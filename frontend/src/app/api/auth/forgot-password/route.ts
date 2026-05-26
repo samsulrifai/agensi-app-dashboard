@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ok, err } from "@/lib/api-helpers";
 import { sendEmail, resetPasswordTemplate, APP_URL } from "@/lib/resend";
+import { applyRateLimit, getRequestIP } from "@/lib/rate-limit";
 
 /**
  * POST /api/auth/forgot-password
@@ -11,6 +12,11 @@ import { sendEmail, resetPasswordTemplate, APP_URL } from "@/lib/resend";
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 20/min per IP
+    const ip = getRequestIP(request);
+    const rateLimited = applyRateLimit(`${ip}:auth`, "auth");
+    if (rateLimited) return rateLimited;
+
     const body = await request.json();
     const { email } = body;
 

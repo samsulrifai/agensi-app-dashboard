@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     });
     const pendingAmount = pendingInvoices.reduce((s, inv) => s + Number(inv.amount), 0);
 
-    return ok({
+    const result = {
       activeProjects,
       totalWorkers,
       totalPayoutMTD,
@@ -72,7 +72,10 @@ export async function GET(request: NextRequest) {
       pendingInvoicesCount,
       pendingAmount,
       overdueProjects,
-    });
+    };
+
+    cache.set(cacheKey.dashboardStats(), result, CACHE_TTL.DASHBOARD_STATS);
+    return ok(result);
   } catch (error) {
     console.error("[GET /api/admin/dashboard/stats]", error);
     return err("Terjadi kesalahan server", 500);

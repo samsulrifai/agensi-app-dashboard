@@ -187,3 +187,27 @@ export const useSubmitInvoice = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['worker-invoices'] }),
   });
 };
+
+export const useNotifications = () => {
+  return useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => fetcher('/api/notifications?limit=10'),
+    refetchInterval: 30000, // Fallback if realtime fails
+  });
+};
+
+export const useMarkNotificationRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => fetcher(`/api/notifications/${id}/read`, { method: 'PUT' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+};
+
+export const useMarkAllNotificationsRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => fetcher('/api/notifications/read-all', { method: 'PUT' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+};

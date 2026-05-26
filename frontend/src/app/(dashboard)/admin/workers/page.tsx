@@ -12,6 +12,8 @@ import { Search, Filter, Star, Briefcase, Mail, Plus } from "lucide-react";
 import { useAdminWorkers, useInviteWorker } from "@/lib/api-client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,42 +84,7 @@ function getWorkloadIconColor(projectCount: number): string {
   return 'text-blue-500';
 }
 
-// ─── Skeleton Row ─────────────────────────────────────────────────────────────
-
-function SkeletonRow() {
-  return (
-    <TableRow>
-      <TableCell>
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
-          <div className="space-y-1.5">
-            <div className="h-3.5 w-28 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-            <div className="h-3 w-36 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          <div className="h-5 w-14 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-          <div className="h-5 w-14 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="h-5 w-28 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-      </TableCell>
-      <TableCell>
-        <div className="h-5 w-16 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <div className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-          <div className="h-8 w-24 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-}
-
+// Removed local SkeletonRow
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function AdminWorkersPage() {
@@ -163,7 +130,7 @@ export default function AdminWorkersPage() {
   const inactiveCount = allWorkers.filter((w) => !w.isActive).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Worker Directory</h2>
@@ -210,7 +177,7 @@ export default function AdminWorkersPage() {
         </Dialog>
       </div>
 
-      <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+      <Card className="shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4">
           <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="relative w-full md:w-80">
@@ -237,8 +204,8 @@ export default function AdminWorkersPage() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[800px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Worker</TableHead>
@@ -250,11 +217,11 @@ export default function AdminWorkersPage() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <>
-                  <SkeletonRow />
-                  <SkeletonRow />
-                  <SkeletonRow />
-                </>
+                <TableRow>
+                  <TableCell colSpan={5} className="p-0">
+                    <SkeletonTable rows={5} />
+                  </TableCell>
+                </TableRow>
               )}
 
               {isError && (
@@ -267,8 +234,16 @@ export default function AdminWorkersPage() {
 
               {!isLoading && !isError && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
-                    Tidak ada worker yang ditemukan.
+                  <TableCell colSpan={5} className="p-8">
+                    <EmptyState 
+                      icon={<Briefcase className="h-8 w-8" />}
+                      title="No workers found"
+                      description="You can invite new workers to your platform."
+                      action={{
+                        label: "Invite Worker",
+                        onClick: () => setIsInviteModalOpen(true)
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               )}

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession, ok, err } from "@/lib/api-helpers";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/search?q=keyword&scope=projects,tasks,workers
@@ -12,6 +13,12 @@ export async function GET(request: NextRequest) {
     const { session, error } = await getAuthSession();
     if (error) return error;
 
+    const userId = session!.user.id;
+
+    // Rate limit: 30/min per user
+    const rateLimited = applyRateLimit(`${userId}:search`, "search");
+    if (rateLimited) return rateLimited;
+
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim();
     const scopeParam = searchParams.get("scope") || "projects,tasks,workers";
@@ -22,7 +29,6 @@ export async function GET(request: NextRequest) {
 
     const scopes = scopeParam.split(",").map((s) => s.trim());
     const role = (session!.user as any).role;
-    const userId = session!.user.id;
     const LIMIT = 5;
 
     const [projects, tasks, workers] = await Promise.all([

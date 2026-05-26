@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, Printer } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
 const fmt = (n: number) =>
@@ -50,7 +52,7 @@ export default function AdminReportsPage() {
   const byClient = data?.byClient ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Reports & Analytics</h2>
@@ -95,7 +97,7 @@ export default function AdminReportsPage() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="h-8 w-36 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
+                <SkeletonCard className="h-8 w-36 p-0 border-none shadow-none" />
               ) : card.count !== undefined ? (
                 <div className="text-3xl font-bold">{card.count}</div>
               ) : (
@@ -160,13 +162,11 @@ export default function AdminReportsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><div className="h-4 w-28 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" /></TableCell>
-                      <TableCell><div className="h-4 w-20 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" /></TableCell>
-                      <TableCell><div className="h-4 w-20 animate-pulse bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
+                  <TableRow>
+                    <TableCell colSpan={3} className="p-0">
+                      <SkeletonTable rows={3} />
+                    </TableCell>
+                  </TableRow>
                 ) : byProject.length === 0 ? (
                   <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">No data</TableCell></TableRow>
                 ) : (
@@ -199,13 +199,11 @@ export default function AdminReportsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><div className="h-4 w-28 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" /></TableCell>
-                      <TableCell><div className="h-4 w-8 animate-pulse bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></TableCell>
-                      <TableCell><div className="h-4 w-24 animate-pulse bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
+                  <TableRow>
+                    <TableCell colSpan={3} className="p-0">
+                      <SkeletonTable rows={3} />
+                    </TableCell>
+                  </TableRow>
                 ) : byWorker.length === 0 ? (
                   <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">No data</TableCell></TableRow>
                 ) : (

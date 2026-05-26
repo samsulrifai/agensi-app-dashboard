@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
 interface Invoice {
@@ -178,7 +180,7 @@ export default function AdminFinancePage() {
   const margin = totalRevenue > 0 ? ((totalRevenue - totalPayout) / totalRevenue) * 100 : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Finance &amp; Approvals</h2>
@@ -192,7 +194,7 @@ export default function AdminFinancePage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {reportsLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            <SkeletonCard key={i} className="h-28 p-4" />
           ))
         ) : (
           <>
@@ -273,8 +275,8 @@ export default function AdminFinancePage() {
             </Tabs>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[800px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Worker</TableHead>
@@ -287,20 +289,19 @@ export default function AdminFinancePage() {
             </TableHeader>
             <TableBody>
               {invoicesLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></TableCell>
-                    <TableCell><div className="h-4 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></TableCell>
-                    <TableCell><div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></TableCell>
-                    <TableCell><div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></TableCell>
-                    <TableCell><div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></TableCell>
-                    <TableCell className="text-right"><div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></TableCell>
-                  </TableRow>
-                ))
+                <TableRow>
+                  <TableCell colSpan={6} className="p-0">
+                    <SkeletonTable rows={5} />
+                  </TableCell>
+                </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    Tidak ada invoice ditemukan.
+                  <TableCell colSpan={6} className="p-8">
+                    <EmptyState 
+                      icon={<FileText className="h-8 w-8" />}
+                      title="No invoices found"
+                      description="There are no invoices matching your criteria."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
