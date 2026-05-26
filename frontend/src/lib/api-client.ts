@@ -67,7 +67,7 @@ export const useRatingTrend = () => useQuery({
     const res = await fetch('/api/workers/me/rating-trend');
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Error');
-    return json.data;
+    return Array.isArray(json.data) ? json.data : json.data?.months ?? [];
   },
 });
 

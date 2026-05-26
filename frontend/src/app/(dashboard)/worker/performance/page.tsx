@@ -181,7 +181,7 @@ export default function WorkerPerformancePage() {
             <CardDescription>Your performance rating history over time.</CardDescription>
           </CardHeader>
           <CardContent>
-            {(!trendData || trendData.length === 0) ? (
+            {(!trendData || !Array.isArray(trendData) || trendData.length === 0) ? (
               <EmptyState 
                 icon={<Star className="h-8 w-8" />}
                 title="No trend data"
