@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -263,8 +264,19 @@ const COLUMNS: ColumnConfig[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminProjectsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Auto-open create dialog from dashboard "Create Project" button
+  useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      setIsCreateModalOpen(true);
+      // Clean up URL
+      router.replace("/admin/projects", { scroll: false });
+    }
+  }, [searchParams, router]);
   const [formData, setFormData] = useState({
     title: "",
     clientName: "",
@@ -509,7 +521,7 @@ export default function AdminProjectsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right pr-4">
-                          <Button variant="ghost" size="sm">View</Button>
+                          <Button variant="ghost" size="sm" onClick={() => toast.info(`Viewing: ${project.title}`)}>View</Button>
                         </TableCell>
                       </TableRow>
                     ))

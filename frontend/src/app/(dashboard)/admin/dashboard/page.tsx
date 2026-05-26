@@ -9,6 +9,7 @@ import { Wallet, Users, LayoutDashboard, AlertCircle, TrendingUp } from "lucide-
 import { Button } from "@/components/ui/button";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useRouter } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ const InvoiceSkeleton = () => (
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // KPI Stats
   const {
@@ -182,8 +184,8 @@ export default function AdminDashboardPage() {
           <p className="text-muted-foreground">Monitor platform performance and team workload.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Generate Report</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">Create Project</Button>
+          <Button variant="outline" onClick={() => router.push("/admin/reports")}>Generate Report</Button>
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => router.push("/admin/projects?create=true")}>Create Project</Button>
         </div>
       </div>
 
@@ -319,7 +321,7 @@ export default function AdminDashboardPage() {
                         </TableCell>
                         <TableCell>{statusBadge(project.status)}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => router.push("/admin/projects")}>
                             View
                           </Button>
                         </TableCell>
