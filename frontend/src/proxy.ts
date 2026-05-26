@@ -52,9 +52,16 @@ export async function proxy(request: NextRequest) {
   }
 
   // Baca JWT token langsung — Edge Runtime safe (tidak butuh Prisma)
+  // NextAuth v5 uses "authjs" cookie prefix, not "next-auth"
+  const isSecure = request.url.startsWith("https://");
+  const cookieName = isSecure
+    ? "__Secure-authjs.session-token"
+    : "authjs.session-token";
+  
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
+    cookieName,
   });
 
   // No token — redirect ke login atau return 401 untuk API
