@@ -103,6 +103,7 @@ export default function WorkerFinancePage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <title>Worker Finance</title>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Finance & Invoices</h2>

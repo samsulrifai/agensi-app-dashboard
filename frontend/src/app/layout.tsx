@@ -10,8 +10,18 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Worker & Admin Dashboard",
-  description: "Platform for managing freelance workers and projects",
+  title: {
+    default: "Agensi Dashboard",
+    template: "%s | Agensi Dashboard",
+  },
+  description: "Platform manajemen proyek freelance dan tim worker",
+  icons: {
+    icon: "/favicon.ico",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({

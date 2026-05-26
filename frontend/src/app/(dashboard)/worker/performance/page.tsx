@@ -15,6 +15,7 @@ export default function WorkerPerformancePage() {
   if (isStatsLoading || isTrendLoading) {
     return (
       <div className="space-y-6">
+      <title>Worker Performance</title>
         <SkeletonCard className="h-20" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <SkeletonCard className="h-[110px]" />

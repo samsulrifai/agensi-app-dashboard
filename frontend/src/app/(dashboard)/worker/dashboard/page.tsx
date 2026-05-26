@@ -19,6 +19,7 @@ export default function WorkerDashboardPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
+      <title>Worker Dashboard</title>
         <SkeletonCard className="h-20" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <SkeletonCard className="h-[110px]" />

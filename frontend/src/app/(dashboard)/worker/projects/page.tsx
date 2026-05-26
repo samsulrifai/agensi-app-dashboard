@@ -27,6 +27,7 @@ export default function WorkerProjectsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
+      <title>Worker Projects</title>
         <SkeletonCard />
         <SkeletonCard />
       </div>
@@ -77,7 +78,7 @@ export default function WorkerProjectsPage() {
             <div className="flex items-center gap-3">
               <h3 className="text-xl font-bold">{project.title}</h3>
               {project.isUrgent && (
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 animate-pulse">
                   Urgent: {project.daysUntilDeadline} days left
                 </Badge>
               )}
