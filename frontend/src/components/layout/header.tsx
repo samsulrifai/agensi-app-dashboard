@@ -1,13 +1,18 @@
 "use client";
 
-import { Bell, Search, Menu } from "lucide-react";
+import { Bell, Search, Menu, Moon, Sun } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sidebar } from "@/components/layout/sidebar";
 
 export function Header() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
+  
   const user = session?.user as any;
   
   const displayName = user?.name || "Loading...";
@@ -17,9 +22,16 @@ export function Header() {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6">
-      <Button variant="ghost" size="icon" className="md:hidden">
-        <Menu className="h-5 w-5" />
-      </Button>
+      <Sheet>
+        <SheetTrigger>
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64 border-r-0">
+          <Sidebar role={user?.role} />
+        </SheetContent>
+      </Sheet>
       
       <div className="flex flex-1 items-center gap-4">
         <div className="relative w-full max-w-md hidden md:flex items-center">
@@ -33,6 +45,16 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5 text-muted-foreground" />
           <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive" />

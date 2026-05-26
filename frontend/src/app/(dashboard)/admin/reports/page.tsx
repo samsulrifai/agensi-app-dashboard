@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, Printer } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
@@ -17,7 +18,7 @@ export default function AdminReportsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['reports-financial', months],
     queryFn: async () => {
-      const res = await fetch(`/api/reports/financial?months=${months}`);
+      const res = await fetch(`/api/reports/financial?months=${months}`, { credentials: 'include' });
       const json = await res.json();
       return json.data;
     },
@@ -30,6 +31,9 @@ export default function AdminReportsPage() {
 
   const summary = data?.summary;
   const totalPaid = (summary?.totalPaid ?? 0) + (summary?.totalApproved ?? 0);
+  const byProject = data?.byProject ?? [];
+  const byWorker = data?.byWorker ?? [];
+  const byClient = data?.byClient ?? [];
 
   return (
     <div className="space-y-6">
@@ -44,25 +48,12 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
+      {/* Filter Controls */}
       <div className="flex flex-wrap gap-4 items-end bg-white dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="space-y-2 w-full md:w-auto">
-          <label className="text-sm font-medium">Report Type</label>
-          <Select defaultValue="financial">
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="financial">Financial Overview</SelectItem>
-              <SelectItem value="performance">Worker Performance</SelectItem>
-              <SelectItem value="projects">Project Status</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="space-y-2 w-full md:w-auto">
           <label className="text-sm font-medium">Timeframe</label>
           <Select value={months} onValueChange={(v) => setMonths(v ?? months)}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Select timeframe" />
             </SelectTrigger>
             <SelectContent>
@@ -73,69 +64,49 @@ export default function AdminReportsPage() {
             </SelectContent>
           </Select>
         </div>
-
-        <Button variant="secondary" className="w-full md:w-auto mt-4 md:mt-0">Generate</Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Dibayar (YTD)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="h-8 w-36 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
-            ) : (
-              <div className="text-3xl font-bold">{fmt(totalPaid)}</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Disetujui (Approved)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="h-8 w-36 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
-            ) : (
-              <div className="text-3xl font-bold">{fmt(summary?.totalApproved ?? 0)}</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Menunggu Persetujuan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="h-8 w-36 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
-            ) : (
-              <>
-                <div className="text-3xl font-bold">{fmt(summary?.totalPending ?? 0)}</div>
-                <p className="text-xs text-amber-500 mt-1">Waiting for approval</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {[
+          { label: "Total Payout (Period)", value: totalPaid, sub: null },
+          { label: "Approved", value: summary?.totalApproved ?? 0, sub: null },
+          { label: "Pending", value: summary?.totalPending ?? 0, sub: "Waiting approval" },
+          { label: "Projects Completed", value: null, count: summary?.projectsCompleted ?? 0, sub: null },
+        ].map((card, i) => (
+          <Card key={i} className="shadow-sm border-slate-200 dark:border-slate-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="h-8 w-36 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
+              ) : card.count !== undefined ? (
+                <div className="text-3xl font-bold">{card.count}</div>
+              ) : (
+                <>
+                  <div className="text-3xl font-bold">{fmt(card.value ?? 0)}</div>
+                  {card.sub && <p className="text-xs text-amber-500 mt-1">{card.sub}</p>}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Main Chart */}
+      {/* Monthly Payout Chart */}
       <Card className="shadow-sm border-slate-200 dark:border-slate-800">
         <CardHeader>
-          <CardTitle>
-            Monthly Payouts ({months === "1" ? "Last Month" : months === "12" ? "Last Year" : `Last ${months} Months`})
-          </CardTitle>
-          <CardDescription>Monthly payout performance from real invoice data.</CardDescription>
+          <CardTitle>Monthly Payouts</CardTitle>
+          <CardDescription>Payout totals per month from approved invoices.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[350px] w-full mt-4">
+          <div className="h-[300px] w-full mt-2">
             {isLoading ? (
               <div className="h-full w-full animate-pulse bg-slate-100 dark:bg-slate-800 rounded-lg" />
             ) : chartData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-muted-foreground">
-                No data available for this period
+                No data for this period
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -144,7 +115,7 @@ export default function AdminReportsPage() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(v) => `Rp${(v / 1000000).toFixed(0)}M`} />
                   <Tooltip
-                    formatter={(value: any) => [fmt(Number(value)), 'Payout']}
+                    formatter={(value: number) => [fmt(value), 'Payout']}
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px', color: '#f8fafc' }}
                     itemStyle={{ color: '#f8fafc' }}
                   />
@@ -155,6 +126,116 @@ export default function AdminReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Breakdown Tables */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* By Project */}
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-base">By Project</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="text-right">Payout</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-4 w-28 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-20 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-20 animate-pulse bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : byProject.length === 0 ? (
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">No data</TableCell></TableRow>
+                ) : (
+                  byProject.map((p: any, i: number) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{p.projectTitle}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{p.clientName}</TableCell>
+                      <TableCell className="text-right">{fmt(p.paidOut)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* By Worker */}
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-base">By Worker</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Worker</TableHead>
+                  <TableHead className="text-right">Invoices</TableHead>
+                  <TableHead className="text-right">Total Payout</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-4 w-28 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-8 animate-pulse bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></TableCell>
+                      <TableCell><div className="h-4 w-24 animate-pulse bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : byWorker.length === 0 ? (
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">No data</TableCell></TableRow>
+                ) : (
+                  byWorker.map((w: any, i: number) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{w.workerName}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{w.invoiceCount}</TableCell>
+                      <TableCell className="text-right">{fmt(w.totalPayout)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* By Client */}
+      {byClient.length > 0 && (
+        <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-base">By Client</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="text-right">Projects</TableHead>
+                  <TableHead className="text-right">Total Payout</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {byClient.map((c: any, i: number) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{c.clientName}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{c.projectCount}</TableCell>
+                    <TableCell className="text-right">{fmt(c.totalPayout)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -144,9 +144,50 @@ export async function GET(request: NextRequest) {
       workerMap[wid].invoiceCount++;
     }
 
+    // Per client breakdown
+    const clientMap: Record<string, { clientName: string; totalPayout: number; projectCount: number }> = {};
+    for (const inv of invoices) {
+      const cn = inv.project.clientName;
+      if (!clientMap[cn]) {
+        clientMap[cn] = { clientName: cn, totalPayout: 0, projectCount: 0 };
+      }
+      clientMap[cn].totalPayout += Number(inv.amount);
+    }
+    // Count unique projects per client
+    for (const pid of Object.keys(projectMap)) {
+      const cn = projectMap[pid].clientName;
+      if (clientMap[cn]) clientMap[cn].projectCount++;
+    }
+
+    // Projects completed in period
+    const projectsCompleted = await prisma.project.count({
+      where: {
+        status: "done",
+        completedAt: { gte: startDate, lte: endDate },
+      },
+    });
+
+    // Total revenue = sum of project budgets that have paid invoices in period
+    const totalRevenue = Object.values(projectMap).reduce((s, p) => s + p.budget, 0);
+    const totalPayout = Number(allPaid._sum.amount ?? 0) + Number(allApproved._sum.amount ?? 0);
+    const margin = totalRevenue > 0 ? Math.round(((totalRevenue - totalPayout) / totalRevenue) * 100) : 0;
+
+    // monthlyTrend format (requested by Task 2)
+    const monthlyTrend = monthly.map((m) => ({
+      month: m.month,
+      label: m.label,
+      revenue: m.total, // proxy: use payout as revenue (no separate revenue tracking)
+      payout: m.total,
+      invoiceCount: m.invoiceCount,
+    }));
+
     return ok({
       period: { start: startDate, end: endDate },
       summary: {
+        totalRevenue,
+        totalPayout,
+        margin,
+        projectsCompleted,
         totalPaid: Number(allPaid._sum.amount ?? 0),
         totalApproved: Number(allApproved._sum.amount ?? 0),
         totalPending: Number(allPending._sum.amount ?? 0),
@@ -154,16 +195,22 @@ export async function GET(request: NextRequest) {
         totalInvoices: invoices.length,
         pendingCount: pendingInvoices.length,
       },
-      // Key: monthly (yang digunakan frontend chart)
+      // Primary keys (used by frontend)
       monthly,
-      // Legacy keys for backward compat
-      monthlyBreakdown: monthly,
+      monthlyTrend,
       byProject: Object.values(projectMap).sort((a, b) => b.paidOut - a.paidOut),
       byWorker: Object.values(workerMap).sort((a, b) => b.totalPayout - a.totalPayout),
-      // Legacy keys
+      byClient: Object.values(clientMap).sort((a, b) => b.totalPayout - a.totalPayout),
+      // Task 2 required keys
+      breakdownByProject: Object.values(projectMap).sort((a, b) => b.paidOut - a.paidOut),
+      breakdownByWorker: Object.values(workerMap).sort((a, b) => b.totalPayout - a.totalPayout),
+      breakdownByClient: Object.values(clientMap).sort((a, b) => b.totalPayout - a.totalPayout),
+      // Legacy keys for backward compat
+      monthlyBreakdown: monthly,
       perProjectBreakdown: Object.values(projectMap),
       perWorkerBreakdown: Object.values(workerMap).sort((a, b) => b.totalPayout - a.totalPayout),
     });
+
   } catch (error) {
     console.error("[GET /api/reports/financial]", error);
     return err("Terjadi kesalahan server", 500);

@@ -86,6 +86,8 @@ model User {
   notifications    Notification[]
   attachments      Attachment[]
   auditLogs        AuditLog[]
+  passwordResetTokens PasswordResetToken[]
+  preference       UserPreference?
 
   @@map("users")
 }
@@ -269,4 +271,31 @@ model AuditLog {
   user User @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model UserPreference {
+  id                    String  @id @default(uuid())
+  userId                String  @unique @map("user_id")
+  theme                 String  @default("system")
+  emailNotifications    Boolean @default(true) @map("email_notifications")
+  pushNotifications     Boolean @default(true) @map("push_notifications")
+  language              String  @default("id")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
 }

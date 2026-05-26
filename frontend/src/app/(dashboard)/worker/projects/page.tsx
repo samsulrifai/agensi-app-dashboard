@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Play, FileUp, MessageSquare, MoreVertical, Calendar } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { useWorkerProjects, useStartTimer, useCompleteTask } from "@/lib/api-client";
+import { FileUploader } from "@/components/ui/file-uploader";
 import { toast } from "sonner";
 
 export default function WorkerProjectsPage() {
@@ -125,9 +127,30 @@ export default function WorkerProjectsPage() {
           </div>
         </CardContent>
         <CardFooter className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 px-6 py-4 flex gap-3">
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-            <FileUp className="h-4 w-4 mr-2" /> Upload Deliverable
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <FileUp className="h-4 w-4 mr-2" /> Upload Deliverable
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Upload Deliverable</DialogTitle>
+                <DialogDescription>
+                  Upload your completed work for project {project.title}.
+                </DialogDescription>
+              </DialogHeader>
+              <FileUploader 
+                bucket="deliverables"
+                maxSizeMB={20}
+                onUploadComplete={(url) => {
+                  toast.success("Deliverable uploaded successfully!");
+                  // Here you would typically call an API to save the URL to the project
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+          
           <Button size="sm" variant="outline">
             <MessageSquare className="h-4 w-4 mr-2" /> Discussion
           </Button>

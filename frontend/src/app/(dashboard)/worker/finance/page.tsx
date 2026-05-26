@@ -14,6 +14,7 @@ import { Plus, Download, Search } from "lucide-react";
 import { useWorkerInvoices, useWorkerProjects, useSubmitInvoice } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { FileUploader } from "@/components/ui/file-uploader";
 
 export default function WorkerFinancePage() {
   const { data: invoices, isLoading } = useWorkerInvoices();
@@ -24,6 +25,7 @@ export default function WorkerFinancePage() {
   const [projectId, setProjectId] = useState("");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
+  const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>(undefined);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +38,7 @@ export default function WorkerFinancePage() {
       projectId,
       amount: Number(amount),
       notes,
+      attachmentUrl,
     }, {
       onSuccess: () => {
         toast.success("Invoice submitted successfully");
@@ -43,6 +46,7 @@ export default function WorkerFinancePage() {
         setProjectId("");
         setAmount("");
         setNotes("");
+        setAttachmentUrl(undefined);
       },
       onError: (err: any) => {
         toast.error(err.message || "Failed to submit invoice");
@@ -122,8 +126,13 @@ export default function WorkerFinancePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="file">Attachment (Optional)</Label>
-                  <Input id="file" type="file" />
+                  <Label>Attachment (Optional)</Label>
+                  <FileUploader 
+                    bucket="invoices"
+                    maxSizeMB={5}
+                    acceptedTypes="image/*,application/pdf"
+                    onUploadComplete={(url) => setAttachmentUrl(url)}
+                  />
                 </div>
               </div>
               <DialogFooter>

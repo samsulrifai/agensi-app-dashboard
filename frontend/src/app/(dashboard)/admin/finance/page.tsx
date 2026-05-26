@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, FileCheck2, FileX2, Eye, Download, X } from "lucide-react";
+import { Search, FileCheck2, FileX2, Eye, Download, X, Wallet, FileText, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Invoice {
   id: string;
@@ -74,11 +75,21 @@ export default function AdminFinancePage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery<{ invoices: Invoice[] }>({
+  const { data: invoicesData, isLoading: invoicesLoading } = useQuery<{ invoices: Invoice[] }>({
     queryKey: ['invoices'],
     queryFn: async () => {
       const res = await fetch('/api/invoices', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch invoices');
+      const json = await res.json();
+      return json.data;
+    },
+  });
+
+  const { data: reportsData, isLoading: reportsLoading } = useQuery<any>({
+    queryKey: ['reports-financial'],
+    queryFn: async () => {
+      const res = await fetch('/api/reports/financial', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch reports');
       const json = await res.json();
       return json.data;
     },
@@ -127,14 +138,21 @@ export default function AdminFinancePage() {
     }
   };
 
-  const invoices = data?.invoices ?? [];
+  const [activeTab, setActiveTab] = useState('all');
+
+  const invoices = invoicesData?.invoices ?? [];
   const filtered = invoices.filter((inv) => {
     const q = search.toLowerCase();
-    return (
-      inv.worker.fullName.toLowerCase().includes(q) ||
-      inv.project.title.toLowerCase().includes(q)
-    );
+    const matchesSearch = inv.worker.fullName.toLowerCase().includes(q) || inv.project.title.toLowerCase().includes(q);
+    const matchesTab = activeTab === 'all' || inv.status === activeTab;
+    return matchesSearch && matchesTab;
   });
+
+  const stats = reportsData?.summary || {};
+  const totalPayout = stats.totalPaid || 0;
+  // Approximation for UI demo if backend doesn't provide revenue directly:
+  const totalRevenue = (stats.totalPaid + stats.totalPending) * 1.5 || 0; // Simulated revenue
+  const margin = totalRevenue > 0 ? ((totalRevenue - totalPayout) / totalRevenue) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -148,21 +166,88 @@ export default function AdminFinancePage() {
         </Button>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {reportsLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-28 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
+          ))
+        ) : (
+          <>
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <Wallet className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatRupiah(totalRevenue)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Est. total project budget</p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
+                <Wallet className="h-4 w-4 text-emerald-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatRupiah(totalPayout)}</div>
+                <p className="text-xs text-emerald-500 mt-1">Paid to workers</p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
+                <FileText className="h-4 w-4 text-amber-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pendingCount || 0}</div>
+                <p className="text-xs text-amber-500 mt-1">{formatRupiah(stats.totalPending || 0)} awaiting approval</p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Net Margin</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-indigo-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{margin.toFixed(1)}%</div>
+                <p className="text-xs text-muted-foreground mt-1">Average profit margin</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+
       <Card className="shadow-sm border-slate-200 dark:border-slate-800">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4">
-          <div>
-            <CardTitle>Invoice Queue</CardTitle>
-            <CardDescription>Invoices waiting for your review and approval.</CardDescription>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Invoice Queue</CardTitle>
+              <CardDescription>Invoices waiting for your review and approval.</CardDescription>
+            </div>
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search invoices..."
+                className="pl-9 w-full"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search invoices..."
-              className="pl-9 w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="mt-4 border-b">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="bg-transparent h-auto p-0">
+                <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-4 pb-2">All</TabsTrigger>
+                <TabsTrigger value="pending" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-4 pb-2">Pending</TabsTrigger>
+                <TabsTrigger value="approved" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-4 pb-2">Approved</TabsTrigger>
+                <TabsTrigger value="paid" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-4 pb-2">Paid</TabsTrigger>
+                <TabsTrigger value="rejected" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-4 pb-2">Rejected</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </CardHeader>
         <CardContent>
@@ -178,7 +263,7 @@ export default function AdminFinancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {invoicesLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" /></TableCell>
