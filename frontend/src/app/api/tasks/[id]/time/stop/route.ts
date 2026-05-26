@@ -4,7 +4,7 @@ import { getAuthSession, ok, err } from "@/lib/api-helpers";
 
 /**
  * POST /api/tasks/[id]/time/stop
- * Hentikan timer pada task
+ * Hentikan timer dan update actual_hours di task (sum seluruh time logs)
  */
 export async function POST(
   request: NextRequest,
@@ -17,7 +17,7 @@ export async function POST(
 
     const userId = session!.user.id;
 
-    // Temukan timer yang aktif
+    // Temukan timer aktif
     const activeLog = await prisma.timeLog.findFirst({
       where: { taskId: id, workerId: userId, endedAt: null },
     });
@@ -31,25 +31,30 @@ export async function POST(
       (endedAt.getTime() - activeLog.startedAt.getTime()) / 60000
     );
 
+    // Update time log
     const updated = await prisma.timeLog.update({
       where: { id: activeLog.id },
       data: { endedAt, durationMinutes },
     });
 
-    // Update actual_hours di task
-    const totalMinutes = await prisma.timeLog.aggregate({
-      where: { taskId: id, workerId: userId, endedAt: { not: null } },
+    // Hitung total actual_hours dari SELURUH time logs task ini (semua worker)
+    const totalAgg = await prisma.timeLog.aggregate({
+      where: { taskId: id, endedAt: { not: null } },
       _sum: { durationMinutes: true },
     });
 
+    const totalActualHours = (totalAgg._sum.durationMinutes ?? 0) / 60;
+
     await prisma.task.update({
       where: { id },
-      data: {
-        actualHours: (totalMinutes._sum.durationMinutes ?? 0) / 60,
-      },
+      data: { actualHours: totalActualHours },
     });
 
-    return ok({ ...updated, durationMinutes });
+    return ok({
+      ...updated,
+      durationMinutes,
+      totalActualHours: Math.round(totalActualHours * 100) / 100,
+    });
   } catch (error) {
     console.error("[POST /api/tasks/[id]/time/stop]", error);
     return err("Terjadi kesalahan server", 500);

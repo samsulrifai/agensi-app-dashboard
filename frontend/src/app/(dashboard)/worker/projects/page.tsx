@@ -8,13 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Play, FileUp, MessageSquare, MoreVertical, Calendar } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-import { useWorkerProjects, useStartTimer, useCompleteTask } from "@/lib/api-client";
+import { useWorkerProjects, useStartTimer, useStopTimer, useCompleteTask, useActiveTimer } from "@/lib/api-client";
 import { FileUploader } from "@/components/ui/file-uploader";
+import { TimeTracker } from "@/components/time-tracker";
 import { toast } from "sonner";
 
 export default function WorkerProjectsPage() {
   const { data: projects, isLoading } = useWorkerProjects();
+  const { data: activeTimer } = useActiveTimer();
+  
   const startTimer = useStartTimer();
+  const stopTimer = useStopTimer();
   const completeTask = useCompleteTask();
 
   if (isLoading) {
@@ -29,6 +33,13 @@ export default function WorkerProjectsPage() {
     startTimer.mutate(taskId, {
       onSuccess: () => toast.success("Timer started!"),
       onError: (err: any) => toast.error(err.message || "Failed to start timer"),
+    });
+  };
+
+  const handleStopTimer = (taskId: string) => {
+    stopTimer.mutate(taskId, {
+      onSuccess: () => toast.success("Timer stopped!"),
+      onError: (err: any) => toast.error(err.message || "Failed to stop timer"),
     });
   };
 
@@ -103,15 +114,16 @@ export default function WorkerProjectsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleStartTimer(task.id)}
-                    disabled={task.status === 'done' || startTimer.isPending}
-                    className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-900/20"
-                  >
-                    <Play className="h-3 w-3 mr-1" /> Start Timer
-                  </Button>
+                  <TimeTracker
+                    variant="compact"
+                    taskId={task.id}
+                    isActive={activeTimer?.taskId === task.id}
+                    initialSeconds={activeTimer?.taskId === task.id ? Math.floor((new Date().getTime() - new Date(activeTimer.startedAt).getTime()) / 1000) : 0}
+                    onStart={handleStartTimer}
+                    onStop={handleStopTimer}
+                    isPending={startTimer.isPending || stopTimer.isPending}
+                  />
+                  
                   <Button 
                     size="sm" 
                     variant="outline" 

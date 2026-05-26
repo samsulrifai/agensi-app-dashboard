@@ -5,6 +5,7 @@ import { getAuthSession, ok, err } from "@/lib/api-helpers";
 /**
  * POST /api/tasks/[id]/time/start
  * Mulai timer pada task
+ * Validasi: tidak boleh ada timer aktif di task MANAPUN untuk worker yang sama
  */
 export async function POST(
   request: NextRequest,
@@ -17,20 +18,33 @@ export async function POST(
 
     const userId = session!.user.id;
 
-    // Cek apakah ada timer yang masih aktif untuk task ini
-    const activeLog = await prisma.timeLog.findFirst({
-      where: { taskId: id, workerId: userId, endedAt: null },
+    // Cek task ada dan worker punya akses
+    const task = await prisma.task.findUnique({
+      where: { id },
+      include: { project: { select: { id: true, title: true } } },
+    });
+    if (!task) return err("Task tidak ditemukan", 404);
+
+    // Validasi: tidak boleh ada timer aktif di task manapun (global check)
+    const anyActiveTimer = await prisma.timeLog.findFirst({
+      where: { workerId: userId, endedAt: null },
+      include: { task: { select: { title: true } } },
     });
 
-    if (activeLog) {
-      return err("Timer sudah berjalan untuk task ini. Hentikan timer terlebih dahulu.", 409);
+    if (anyActiveTimer) {
+      return err(
+        `Timer sudah berjalan untuk task "${anyActiveTimer.task.title}". Hentikan timer tersebut terlebih dahulu.`,
+        409
+      );
     }
 
-    // Update task status ke in_progress
-    await prisma.task.update({
-      where: { id },
-      data: { status: "in_progress" },
-    });
+    // Update task status ke in_progress jika masih todo
+    if (task.status === "todo") {
+      await prisma.task.update({
+        where: { id },
+        data: { status: "in_progress" },
+      });
+    }
 
     const timeLog = await prisma.timeLog.create({
       data: {
@@ -40,7 +54,7 @@ export async function POST(
       },
     });
 
-    return ok(timeLog, 201);
+    return ok({ ...timeLog, taskTitle: task.title, projectTitle: task.project.title }, 201);
   } catch (error) {
     console.error("[POST /api/tasks/[id]/time/start]", error);
     return err("Terjadi kesalahan server", 500);

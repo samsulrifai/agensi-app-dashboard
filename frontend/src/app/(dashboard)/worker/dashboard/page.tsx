@@ -3,12 +3,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Wallet, Star, Clock, ArrowUpRight } from "lucide-react";
-import { useWorkerDashboard } from "@/lib/api-client";
+import { Wallet, Star, Clock, ArrowUpRight, Activity } from "lucide-react";
+import { useWorkerDashboard, useActiveTimer, useStartTimer, useStopTimer } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/utils";
+import { TimeTracker } from "@/components/time-tracker";
 
 export default function WorkerDashboardPage() {
   const { data, isLoading } = useWorkerDashboard();
+  const { data: activeTimer } = useActiveTimer();
+  const startTimer = useStartTimer();
+  const stopTimer = useStopTimer();
 
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading dashboard...</div>;
@@ -69,8 +73,37 @@ export default function WorkerDashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Active Projects Widget */}
-        <Card className="col-span-4 shadow-sm border-slate-200 dark:border-slate-800">
+        <div className="col-span-4 space-y-4">
+          {/* Currently Tracking Widget */}
+          {activeTimer && activeTimer.taskId && (
+            <Card className="shadow-sm border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-900/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center text-emerald-800 dark:text-emerald-400">
+                  <Activity className="h-4 w-4 mr-2 animate-pulse" />
+                  Currently Tracking
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="font-semibold text-lg">{activeTimer.taskTitle || 'Current Task'}</div>
+                    <div className="text-sm text-muted-foreground">{activeTimer.projectTitle || 'Project'}</div>
+                  </div>
+                  <TimeTracker 
+                    taskId={activeTimer.taskId}
+                    isActive={true}
+                    initialSeconds={Math.floor((new Date().getTime() - new Date(activeTimer.startedAt).getTime()) / 1000)}
+                    onStart={(id) => startTimer.mutate(id)}
+                    onStop={(id) => stopTimer.mutate(id)}
+                    isPending={stopTimer.isPending}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Active Projects Widget */}
+          <Card className="shadow-sm border-slate-200 dark:border-slate-800">
           <CardHeader>
             <CardTitle>Active Projects</CardTitle>
             <CardDescription>You have {activeProjectsCount || 0} projects currently in progress.</CardDescription>
@@ -90,8 +123,9 @@ export default function WorkerDashboardPage() {
                 <Progress value={project.progress || 0} className="h-2" />
               </div>
             ))}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Recent Notifications */}
         <Card className="col-span-3 shadow-sm border-slate-200 dark:border-slate-800">

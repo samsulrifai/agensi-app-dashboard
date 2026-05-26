@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ok, err } from "@/lib/api-helpers";
+import { sendEmail } from "@/lib/resend";
 
 const RejectSchema = z.object({
   reason: z.string().min(5, "Alasan penolakan minimal 5 karakter"),
@@ -9,7 +10,7 @@ const RejectSchema = z.object({
 
 /**
  * PUT /api/invoices/[id]/reject
- * Admin only — tolak invoice beserta alasan
+ * Admin only — tolak invoice (reason wajib) + audit log + email
  */
 export async function PUT(
   request: NextRequest,
@@ -26,7 +27,10 @@ export async function PUT(
 
     const invoice = await prisma.invoice.findUnique({
       where: { id },
-      include: { project: { select: { title: true } } },
+      include: {
+        worker: { select: { id: true, fullName: true, email: true } },
+        project: { select: { title: true } },
+      },
     });
 
     if (!invoice) return err("Invoice tidak ditemukan", 404);
@@ -42,7 +46,7 @@ export async function PUT(
       },
     });
 
-    // Notifikasi ke worker
+    // Notifikasi in-app
     await prisma.notification.create({
       data: {
         userId: invoice.workerId,
@@ -64,6 +68,27 @@ export async function PUT(
         newValue: { status: "rejected", rejectionReason: parsed.data.reason },
       },
     });
+
+    // Email notifikasi (fire and forget)
+    sendEmail({
+      to: invoice.worker.email,
+      subject: `Invoice Ditolak — ${invoice.project.title}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;">
+          <h2 style="color:#ef4444;">Invoice Ditolak</h2>
+          <p>Halo <strong>${invoice.worker.fullName}</strong>,</p>
+          <p>Mohon maaf, invoice Anda untuk proyek <strong>${invoice.project.title}</strong> sebesar 
+          <strong>Rp ${Number(invoice.amount).toLocaleString("id-ID")}</strong> tidak dapat disetujui.</p>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0;">
+            <strong>Alasan Penolakan:</strong><br/>
+            <span style="color:#dc2626;">${parsed.data.reason}</span>
+          </div>
+          <p>Anda dapat memperbaiki dan mengajukan ulang invoice setelah memperhatikan alasan di atas.</p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;" />
+          <p style="color:#64748b;font-size:12px;">Agency App — Sistem Manajemen Proyek</p>
+        </div>
+      `,
+    }).catch(console.error);
 
     return ok(updated);
   } catch (error) {

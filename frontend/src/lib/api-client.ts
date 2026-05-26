@@ -50,6 +50,26 @@ export const useWorkerStats = () => useQuery({
   },
 });
 
+export const useActiveTimer = () => useQuery({
+  queryKey: ['active-timer'],
+  queryFn: async () => {
+    const res = await fetch('/api/workers/me/active-timer');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error');
+    return json.data;
+  },
+});
+
+export const useRatingTrend = () => useQuery({
+  queryKey: ['rating-trend'],
+  queryFn: async () => {
+    const res = await fetch('/api/workers/me/rating-trend');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error');
+    return json.data;
+  },
+});
+
 
 // -- Admin Queries --
 export const useAdminDashboard = () => useQuery({
@@ -77,7 +97,21 @@ export const useStartTimer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (taskId: string) => fetcher(`/api/tasks/${taskId}/time/start`, { method: 'POST' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['worker-projects'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['worker-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+    },
+  });
+};
+
+export const useStopTimer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => fetcher(`/api/tasks/${taskId}/time/stop`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['worker-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+    },
   });
 };
 

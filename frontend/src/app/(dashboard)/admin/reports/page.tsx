@@ -15,6 +15,12 @@ const fmt = (n: number) =>
 export default function AdminReportsPage() {
   const [months, setMonths] = useState("6");
 
+  const handleExport = () => {
+    window.open(`/api/reports/financial/export?format=csv&months=${months}`, '_blank');
+  };
+
+  const handlePrint = () => window.print();
+
   const { data, isLoading } = useQuery({
     queryKey: ['reports-financial', months],
     queryFn: async () => {
@@ -43,8 +49,8 @@ export default function AdminReportsPage() {
           <p className="text-muted-foreground">Generate comprehensive reports on finances and performance.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline"><Printer className="h-4 w-4 mr-2" /> Print</Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700"><Download className="h-4 w-4 mr-2" /> Export PDF</Button>
+          <Button variant="outline" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" /> Print</Button>
+          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleExport}><Download className="h-4 w-4 mr-2" /> Export CSV</Button>
         </div>
       </div>
 
