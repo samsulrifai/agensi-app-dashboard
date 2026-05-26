@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
 
     const where: any = {
       ...(role === "worker" ? { projectWorkers: { some: { workerId: userId } } } : {}),
-      ...(status ? { status } : {}),
-      ...(priority ? { priority } : {}),
+      ...(status ? { status: status.includes(",") ? { in: status.split(",") } : status } : {}),
+      ...(priority ? { priority: priority.includes(",") ? { in: priority.split(",") } : priority } : {}),
       ...(search
         ? {
             OR: [

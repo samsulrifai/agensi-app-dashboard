@@ -23,10 +23,11 @@ export function Header() {
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6">
       <Sheet>
-        <SheetTrigger>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-          </Button>
+        <SheetTrigger
+          className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64 border-r-0">
           <Sidebar role={user?.role} />
