@@ -5,19 +5,35 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Trophy, Target, MessageSquare, Clock } from "lucide-react";
 import { useWorkerStats, useRatingTrend } from "@/lib/api-client";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function WorkerPerformancePage() {
   const { data: stats, isLoading: isStatsLoading } = useWorkerStats();
   const { data: trendData, isLoading: isTrendLoading } = useRatingTrend();
 
   if (isStatsLoading || isTrendLoading) {
-    return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading performance stats...</div>;
+    return (
+      <div className="space-y-6">
+        <SkeletonCard className="h-20" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <SkeletonCard className="h-[110px]" />
+          <SkeletonCard className="h-[110px]" />
+          <SkeletonCard className="h-[110px]" />
+          <SkeletonCard className="h-[110px]" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <SkeletonCard className="col-span-3 h-[300px]" />
+          <SkeletonCard className="col-span-4 h-[300px]" />
+        </div>
+      </div>
+    );
   }
 
   if (!stats) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Performance & Ratings</h2>
         <p className="text-muted-foreground">View your statistics, ratings, and achievements.</p>
@@ -91,7 +107,11 @@ export default function WorkerPerformancePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {stats.badges?.length === 0 && (
-              <div className="text-sm text-muted-foreground italic">No badges earned yet. Keep up the good work!</div>
+              <EmptyState 
+                icon={<Trophy className="h-8 w-8" />}
+                title="No badges yet"
+                description="Keep up the good work to earn badges!"
+              />
             )}
             {stats.badges?.map((badge: any, index: number) => (
               <div key={index} className={`flex items-center gap-4 p-3 rounded-lg border ${
@@ -125,7 +145,11 @@ export default function WorkerPerformancePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {stats.recentReviews?.length === 0 && (
-              <div className="text-sm text-muted-foreground italic">No reviews received yet.</div>
+              <EmptyState 
+                icon={<MessageSquare className="h-8 w-8" />}
+                title="No reviews yet"
+                description="You haven't received any reviews from admins."
+              />
             )}
             {stats.recentReviews?.map((review: any, index: number) => (
               <div key={index}>
@@ -157,7 +181,11 @@ export default function WorkerPerformancePage() {
           </CardHeader>
           <CardContent>
             {(!trendData || trendData.length === 0) ? (
-              <div className="text-sm text-muted-foreground text-center py-8">No trend data available yet.</div>
+              <EmptyState 
+                icon={<Star className="h-8 w-8" />}
+                title="No trend data"
+                description="Complete more projects to see your rating trend."
+              />
             ) : (
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">

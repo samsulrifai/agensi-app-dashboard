@@ -7,6 +7,8 @@ import { Wallet, Star, Clock, ArrowUpRight, Activity } from "lucide-react";
 import { useWorkerDashboard, useActiveTimer, useStartTimer, useStopTimer } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/utils";
 import { TimeTracker } from "@/components/time-tracker";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function WorkerDashboardPage() {
   const { data, isLoading } = useWorkerDashboard();
@@ -15,7 +17,21 @@ export default function WorkerDashboardPage() {
   const stopTimer = useStopTimer();
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading dashboard...</div>;
+    return (
+      <div className="space-y-6">
+        <SkeletonCard className="h-20" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <SkeletonCard className="h-[110px]" />
+          <SkeletonCard className="h-[110px]" />
+          <SkeletonCard className="h-[110px]" />
+          <SkeletonCard className="h-[110px]" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <SkeletonCard className="col-span-4 h-[300px]" />
+          <SkeletonCard className="col-span-3 h-[300px]" />
+        </div>
+      </div>
+    );
   }
 
   if (!data) return null;
@@ -23,7 +39,7 @@ export default function WorkerDashboardPage() {
   const { earnings, activeProjectsCount, projects, rating, recentNotifications } = data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
         <p className="text-muted-foreground">Welcome back, here is what&apos;s happening with your projects.</p>
@@ -109,20 +125,28 @@ export default function WorkerDashboardPage() {
             <CardDescription>You have {activeProjectsCount || 0} projects currently in progress.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {projects?.map((project: any) => (
-              <div key={project.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{project.title}</div>
-                    <div className="text-xs text-muted-foreground">{project.clientName || 'Agency Project'}</div>
+            {projects?.length === 0 ? (
+              <EmptyState 
+                icon={<Clock className="h-8 w-8" />}
+                title="No active projects"
+                description="You are currently not assigned to any projects."
+              />
+            ) : (
+              projects?.map((project: any) => (
+                <div key={project.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{project.title}</div>
+                      <div className="text-xs text-muted-foreground">{project.clientName || 'Agency Project'}</div>
+                    </div>
+                    <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                      {project.status.replace("_", " ")}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                    {project.status.replace("_", " ")}
-                  </Badge>
+                  <Progress value={project.progress || 0} className="h-2" />
                 </div>
-                <Progress value={project.progress || 0} className="h-2" />
-              </div>
-            ))}
+              ))
+            )}
             </CardContent>
           </Card>
         </div>
@@ -134,18 +158,23 @@ export default function WorkerDashboardPage() {
             <CardDescription>Your latest notifications and updates.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentNotifications?.map((notif: any) => (
-              <div key={notif.id} className="flex gap-4 items-start">
-                <div className={`w-2 h-2 mt-2 rounded-full ${notif.isRead ? 'bg-slate-300 dark:bg-slate-700' : 'bg-emerald-500'}`} />
-                <div>
-                  <p className="text-sm font-medium">{notif.title || notif.type}</p>
-                  <p className="text-xs text-muted-foreground">{notif.message}</p>
-                  <span className="text-[10px] text-muted-foreground">{new Date(notif.createdAt).toLocaleDateString()}</span>
+            {(!recentNotifications || recentNotifications.length === 0) ? (
+              <EmptyState 
+                icon={<Activity className="h-8 w-8" />}
+                title="No recent activity"
+                description="You're all caught up!"
+              />
+            ) : (
+              recentNotifications.map((notif: any) => (
+                <div key={notif.id} className="flex gap-4 items-start">
+                  <div className={`w-2 h-2 mt-2 rounded-full ${notif.isRead ? 'bg-slate-300 dark:bg-slate-700' : 'bg-emerald-500'}`} />
+                  <div>
+                    <p className="text-sm font-medium">{notif.title || notif.type}</p>
+                    <p className="text-xs text-muted-foreground">{notif.message}</p>
+                    <span className="text-[10px] text-muted-foreground">{new Date(notif.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {(!recentNotifications || recentNotifications.length === 0) && (
-              <div className="text-sm text-muted-foreground">No recent activity.</div>
+              ))
             )}
           </CardContent>
         </Card>

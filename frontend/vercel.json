@@ -1,0 +1,16 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "NEXTAUTH_SECRET": "@nextauth-secret",
+    "NEXTAUTH_URL": "@nextauth-url",
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "RESEND_API_KEY": "@resend-api-key",
+    "NEXT_PUBLIC_APP_URL": "@app-url"
+  }
+}

@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Wallet, Users, LayoutDashboard, AlertCircle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,24 +91,8 @@ const statusBadge = (status: string) => {
   }
 };
 
-// ─── Skeleton helpers ─────────────────────────────────────────────────────────
-
-const KpiSkeleton = () => (
-  <div className="h-[110px] rounded-lg animate-pulse bg-slate-200 dark:bg-slate-700" />
-);
-
-const RowSkeleton = () => (
-  <TableRow>
-    {[...Array(5)].map((_, i) => (
-      <TableCell key={i}>
-        <div className="h-4 rounded animate-pulse bg-slate-200 dark:bg-slate-700" />
-      </TableCell>
-    ))}
-  </TableRow>
-);
-
 const InvoiceSkeleton = () => (
-  <div className="h-[96px] rounded-lg animate-pulse bg-slate-200 dark:bg-slate-700" />
+  <SkeletonCard className="h-[96px] p-4" />
 );
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -188,7 +174,7 @@ export default function AdminDashboardPage() {
   const invoices = invoicesData?.data?.invoices ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Admin Overview</h2>
@@ -204,10 +190,10 @@ export default function AdminDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsLoading ? (
           <>
-            <KpiSkeleton />
-            <KpiSkeleton />
-            <KpiSkeleton />
-            <KpiSkeleton />
+            <SkeletonCard className="h-[110px] p-4" />
+            <SkeletonCard className="h-[110px] p-4" />
+            <SkeletonCard className="h-[110px] p-4" />
+            <SkeletonCard className="h-[110px] p-4" />
           </>
         ) : statsError || !stats ? (
           <div className="col-span-4 text-sm text-destructive">Gagal memuat statistik.</div>
@@ -283,8 +269,8 @@ export default function AdminDashboardPage() {
             <CardTitle>Project Status</CardTitle>
             <CardDescription>Recent projects and their current progress.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="p-0 overflow-x-auto">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Project Name</TableHead>
@@ -296,21 +282,25 @@ export default function AdminDashboardPage() {
               </TableHeader>
               <TableBody>
                 {projectsLoading ? (
-                  <>
-                    <RowSkeleton />
-                    <RowSkeleton />
-                    <RowSkeleton />
-                  </>
+                  <TableRow>
+                    <TableCell colSpan={5} className="p-0">
+                      <SkeletonTable rows={3} />
+                    </TableCell>
+                  </TableRow>
                 ) : projectsError ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-sm text-destructive">
+                    <TableCell colSpan={5} className="text-sm text-destructive py-8 text-center">
                       Gagal memuat data proyek.
                     </TableCell>
                   </TableRow>
                 ) : projects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-sm text-muted-foreground">
-                      Tidak ada proyek aktif.
+                    <TableCell colSpan={5} className="p-8">
+                      <EmptyState 
+                        icon={<LayoutDashboard className="h-8 w-8" />}
+                        title="No active projects"
+                        description="There are currently no projects in progress."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

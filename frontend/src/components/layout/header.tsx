@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, Menu, Moon, Sun, Loader2, Briefcase, User } from "lucide-react";
+import { Bell, Search, Menu, Moon, Sun, Loader2, Briefcase, User, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,6 +38,7 @@ export function Header() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -87,8 +88,8 @@ export function Header() {
 
       <div className="flex flex-1 items-center gap-4">
         {/* Search with custom dropdown */}
-        <div className="relative w-full max-w-md hidden md:block" ref={searchRef}>
-          <div className="relative">
+        <div className={cn("relative flex-1 max-w-md", mobileSearchOpen ? "block" : "hidden md:block")} ref={searchRef}>
+          <div className="relative flex items-center">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -100,7 +101,21 @@ export function Header() {
                 setSearchOpen(e.target.value.length > 0);
               }}
               onFocus={() => { if (searchQuery.length > 0) setSearchOpen(true); }}
+              autoFocus={mobileSearchOpen}
             />
+            {mobileSearchOpen && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1 h-7 w-7 text-muted-foreground md:hidden"
+                onClick={() => {
+                  setMobileSearchOpen(false);
+                  setSearchQuery("");
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
 
           {searchOpen && searchQuery.length >= 2 && (
@@ -172,7 +187,21 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* Mobile Search Toggle */}
+        {!mobileSearchOpen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+            <span className="sr-only">Search</span>
+          </Button>
+        )}
+
+        {/* Theme Toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -190,7 +219,7 @@ export function Header() {
             className="relative inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             aria-label="Notifications"
           >
-            <Bell className={cn("h-5 w-5 transition-all", unreadCount > 0 && "text-emerald-600 dark:text-emerald-400")} />
+            <Bell className={cn("h-5 w-5 transition-all", unreadCount > 0 && "text-emerald-600 dark:text-emerald-400 animate-shake")} />
             {unreadCount > 0 && (
               <span className="absolute top-1.5 right-1.5 h-4 min-w-[16px] rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center px-1">
                 {unreadCount > 99 ? "99+" : unreadCount}
