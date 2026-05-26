@@ -12,40 +12,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email dan password diperlukan");
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("Email dan password diperlukan");
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          });
+
+          if (!user || !user.isActive) {
+            throw new Error("Email atau password salah");
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password as string,
+            user.passwordHash
+          );
+
+          if (!isValid) {
+            throw new Error("Email atau password salah");
+          }
+
+          // Update last login
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          });
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.fullName,
+            role: user.role,
+            avatarUrl: user.avatarUrl,
+          };
+        } catch (error) {
+          console.error("[AUTH] authorize error:", error);
+          return null;
         }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
-        if (!user || !user.isActive) {
-          throw new Error("Email atau password salah");
-        }
-
-        const isValid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
-        );
-
-        if (!isValid) {
-          throw new Error("Email atau password salah");
-        }
-
-        // Update last login
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.fullName,
-          role: user.role,
-          avatarUrl: user.avatarUrl,
-        };
       },
     }),
   ],
