@@ -21,20 +21,25 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log("[LOGIN] Attempting signIn with:", email);
       const res = await signIn("credentials", {
         redirect: false,
         email,
         password,
       });
+      console.log("[LOGIN] signIn result:", JSON.stringify(res));
 
       if (res?.error) {
-        toast.error(res.error);
-      } else {
+        toast.error(res.error === "Configuration" ? "Login gagal. Coba lagi." : res.error);
+      } else if (res?.ok) {
         toast.success("Login successful");
         router.push("/");
         router.refresh();
+      } else {
+        toast.error("Login gagal. Periksa email dan password.");
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("[LOGIN] Error:", err);
       toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
