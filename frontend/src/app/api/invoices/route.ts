@@ -72,9 +72,9 @@ export async function GET(request: NextRequest) {
 const InvoiceSchema = z.object({
   projectId: z.string().uuid("Project ID tidak valid"),
   amount: z.number().positive("Nominal harus positif"),
-  dueDate: z.string().transform((s) => new Date(s)),
+  dueDate: z.string().transform((s) => new Date(s)).optional(),
   notes: z.string().optional(),
-  attachmentUrl: z.string().url().optional(),
+  attachmentUrl: z.string().url().optional().or(z.literal("")),
 });
 
 /**
@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session!.user.id;
     const { projectId, amount, dueDate, notes, attachmentUrl } = parsed.data;
+    const finalDueDate = dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Default: 30 days
 
     // Verifikasi worker terlibat di proyek
     const membership = await prisma.projectWorker.findUnique({
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
         workerId: userId,
         projectId,
         amount,
-        dueDate,
+        dueDate: finalDueDate,
         notes,
         attachmentUrl,
         invoiceDate: new Date(),

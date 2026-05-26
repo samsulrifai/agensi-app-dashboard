@@ -151,10 +151,8 @@ export default function WorkerProjectsPage() {
                   </Button>
                   
                   <Dialog>
-                    <DialogTrigger>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                    <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 w-8 p-0" />}>
                         <History className="h-4 w-4 text-muted-foreground" />
-                      </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
@@ -195,10 +193,8 @@ export default function WorkerProjectsPage() {
         </CardContent>
         <CardFooter className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 px-6 py-4 flex gap-3">
           <Dialog>
-            <DialogTrigger>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+            <DialogTrigger render={<Button size="sm" className="bg-blue-600 hover:bg-blue-700" />}>
                 <FileUp className="h-4 w-4 mr-2" /> Upload Deliverable
-              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>

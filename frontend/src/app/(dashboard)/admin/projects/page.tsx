@@ -193,10 +193,8 @@ function RateWorkerDialog({ project }: { project: Project }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger>
-        <Button size="sm" variant="outline" className="w-full gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-900/20">
+      <DialogTrigger render={<Button size="sm" variant="outline" className="w-full gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-900/20" />}>
           <Star className="h-4 w-4" /> Rate Worker
-        </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
