@@ -115,7 +115,7 @@ export default function AdminReportsPage() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(v) => `Rp${(v / 1000000).toFixed(0)}M`} />
                   <Tooltip
-                    formatter={(value: number) => [fmt(value), 'Payout']}
+                    formatter={(value: any) => [fmt(Number(value)), 'Payout']}
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px', color: '#f8fafc' }}
                     itemStyle={{ color: '#f8fafc' }}
                   />
