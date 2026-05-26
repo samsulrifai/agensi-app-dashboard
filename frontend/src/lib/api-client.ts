@@ -123,6 +123,26 @@ export const useCompleteTask = () => {
   });
 };
 
+export const useDeleteProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => fetcher(`/api/projects/${projectId}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-projects'] }),
+  });
+};
+
+export const useRateWorker = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => fetcher('/api/ratings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-projects'] }),
+  });
+};
+
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({

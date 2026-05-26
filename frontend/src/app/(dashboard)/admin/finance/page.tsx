@@ -17,8 +17,8 @@ interface Invoice {
   status: 'pending' | 'approved' | 'paid' | 'rejected';
   invoiceDate: string;
   dueDate?: string;
-  notes?: string;
   rejectionReason?: string;
+  attachmentUrl?: string;
   worker: { fullName: string; email: string };
   project: { title: string; clientName?: string };
 }
@@ -55,7 +55,7 @@ function StatusBadge({ status }: { status: Invoice['status'] }) {
       );
     case 'paid':
       return (
-        <Badge variant="outline" className="bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300">
+        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
           Paid
         </Badge>
       );
@@ -73,6 +73,9 @@ function StatusBadge({ status }: { status: Invoice['status'] }) {
 export default function AdminFinancePage() {
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [invoiceToReject, setInvoiceToReject] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: invoicesData, isLoading: invoicesLoading } = useQuery<{ invoices: Invoice[] }>({
@@ -115,7 +118,6 @@ export default function AdminFinancePage() {
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const res = await fetch(`/api/invoices/${id}/reject`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason }),
       });
@@ -124,6 +126,14 @@ export default function AdminFinancePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['reports-financial'] });
+      toast.success('Invoice rejected');
+      setRejectModalOpen(false);
+      setRejectReason('');
+      setInvoiceToReject(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error rejecting invoice');
     },
   });
 
@@ -131,10 +141,19 @@ export default function AdminFinancePage() {
     approveMutation.mutate(id);
   };
 
-  const handleReject = (id: string) => {
-    const reason = window.prompt('Alasan penolakan:');
-    if (reason !== null) {
-      rejectMutation.mutate({ id, reason });
+  const handleRejectClick = (id: string) => {
+    setInvoiceToReject(id);
+    setRejectReason('');
+    setRejectModalOpen(true);
+  };
+
+  const submitReject = () => {
+    if (!rejectReason.trim()) {
+      toast.error('Rejection reason is required');
+      return;
+    }
+    if (invoiceToReject) {
+      rejectMutation.mutate({ id: invoiceToReject, reason: rejectReason });
     }
   };
 
@@ -331,7 +350,7 @@ export default function AdminFinancePage() {
                                 size="icon"
                                 className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                                 title="Reject"
-                                onClick={() => handleReject(invoice.id)}
+                                onClick={() => handleRejectClick(invoice.id)}
                                 disabled={rejectMutation.isPending}
                               >
                                 <FileX2 className="h-4 w-4" />
@@ -399,6 +418,14 @@ export default function AdminFinancePage() {
                   <p className="text-sm">{selectedInvoice.notes}</p>
                 </div>
               )}
+              {selectedInvoice.attachmentUrl && (
+                <div className="space-y-1 border-t pt-3">
+                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Lampiran</p>
+                  <a href={selectedInvoice.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline inline-flex items-center">
+                    <FileText className="h-4 w-4 mr-1" /> View Attachment
+                  </a>
+                </div>
+              )}
               {selectedInvoice.rejectionReason && (
                 <div className="space-y-1 border-t pt-3">
                   <p className="text-red-500 text-xs font-medium uppercase tracking-wide">Alasan Penolakan</p>
@@ -417,7 +444,10 @@ export default function AdminFinancePage() {
                   <Button
                     variant="outline"
                     className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => { handleReject(selectedInvoice.id); setSelectedInvoice(null); }}
+                    onClick={() => { 
+                      setSelectedInvoice(null);
+                      handleRejectClick(selectedInvoice.id); 
+                    }}
                     disabled={rejectMutation.isPending}
                   >
                     <X className="h-4 w-4 mr-2" /> Reject
@@ -426,6 +456,35 @@ export default function AdminFinancePage() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Reason Modal */}
+      <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Invoice</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this invoice. This is required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="reject-reason">Reason</Label>
+            <Textarea
+              id="reject-reason"
+              placeholder="e.g., The attached work is incomplete."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="mt-2"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setRejectModalOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={submitReject} disabled={rejectMutation.isPending || !rejectReason.trim()}>
+              {rejectMutation.isPending ? "Rejecting..." : "Confirm Reject"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

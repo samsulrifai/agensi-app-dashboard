@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Play, FileUp, MessageSquare, MoreVertical, Calendar } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Clock, Play, FileUp, MessageSquare, MoreVertical, Calendar, History } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { useWorkerProjects, useStartTimer, useStopTimer, useCompleteTask, useActiveTimer } from "@/lib/api-client";
@@ -133,6 +134,45 @@ export default function WorkerProjectsPage() {
                   >
                     Done
                   </Button>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                        <History className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Time Logs: {task.title}</DialogTitle>
+                        <DialogDescription>History of time tracked for this task.</DialogDescription>
+                      </DialogHeader>
+                      <div className="max-h-[300px] overflow-auto mt-4">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Start</TableHead>
+                              <TableHead>End</TableHead>
+                              <TableHead>Duration</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(!task.timeLogs || task.timeLogs.length === 0) && (
+                              <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground">No time logs yet.</TableCell>
+                              </TableRow>
+                            )}
+                            {task.timeLogs?.map((log: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell>{new Date(log.startTime).toLocaleString()}</TableCell>
+                                <TableCell>{log.endTime ? new Date(log.endTime).toLocaleString() : 'In Progress'}</TableCell>
+                                <TableCell>{log.durationMinutes ? `${log.durationMinutes} min` : '-'}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             ))}

@@ -3,12 +3,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Trophy, Target, MessageSquare, Clock } from "lucide-react";
-import { useWorkerStats } from "@/lib/api-client";
+import { useWorkerStats, useRatingTrend } from "@/lib/api-client";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export default function WorkerPerformancePage() {
-  const { data: stats, isLoading } = useWorkerStats();
+  const { data: stats, isLoading: isStatsLoading } = useWorkerStats();
+  const { data: trendData, isLoading: isTrendLoading } = useRatingTrend();
 
-  if (isLoading) {
+  if (isStatsLoading || isTrendLoading) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading performance stats...</div>;
   }
 
@@ -144,6 +146,31 @@ export default function WorkerPerformancePage() {
                 )}
               </div>
             ))}
+          </CardContent>
+        {/* Rating Trend Chart */}
+        <Card className="col-span-7 shadow-sm border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle>Rating Trend (6 Months)</CardTitle>
+            <CardDescription>Your performance rating history over time.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(!trendData || trendData.length === 0) ? (
+              <div className="text-sm text-muted-foreground text-center py-8">No trend data available yet.</div>
+            ) : (
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 5]} axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Line type="monotone" dataKey="averageScore" stroke="#10b981" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

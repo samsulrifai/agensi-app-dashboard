@@ -26,11 +26,25 @@ export default function WorkerFinancePage() {
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>(undefined);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const selectedProject = projects?.find((p: any) => p.id === projectId);
+  const remainingBudget = selectedProject ? selectedProject.budget - (selectedProject.spent || 0) : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectId || !amount) {
       toast.error("Please select a project and enter an amount");
+      return;
+    }
+
+    if (Number(amount) > remainingBudget) {
+      toast.error("Amount exceeds remaining project budget");
+      return;
+    }
+
+    if (!showPreview) {
+      setShowPreview(true);
       return;
     }
 
@@ -47,6 +61,7 @@ export default function WorkerFinancePage() {
         setAmount("");
         setNotes("");
         setAttachmentUrl(undefined);
+        setShowPreview(false);
       },
       onError: (err: any) => {
         toast.error(err.message || "Failed to submit invoice");
@@ -89,55 +104,92 @@ export default function WorkerFinancePage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="project">Project</Label>
-                  <Select value={projectId} onValueChange={(val) => setProjectId(val || "")}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects?.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
-                      ))}
-                      {projects?.length === 0 && (
-                        <SelectItem value="none" disabled>No active projects</SelectItem>
+                {!showPreview ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="project">Project</Label>
+                      <Select value={projectId} onValueChange={(val) => setProjectId(val || "")}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projects?.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+                          ))}
+                          {projects?.length === 0 && (
+                            <SelectItem value="none" disabled>No active projects</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {selectedProject && (
+                        <div className="text-xs text-muted-foreground flex justify-between">
+                          <span>Budget: {formatCurrency(selectedProject.budget)}</span>
+                          <span className={remainingBudget < Number(amount) ? "text-red-500 font-medium" : ""}>
+                            Remaining: {formatCurrency(remainingBudget)}
+                          </span>
+                        </div>
                       )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (Rp)</Label>
-                  <Input 
-                    id="amount" 
-                    placeholder="e.g. 5000000" 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea 
-                    id="notes" 
-                    placeholder="Describe the work completed..." 
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Attachment (Optional)</Label>
-                  <FileUploader 
-                    bucket="invoices"
-                    maxSizeMB={5}
-                    acceptedTypes="image/*,application/pdf"
-                    onUploadComplete={(url) => setAttachmentUrl(url)}
-                  />
-                </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">Amount (Rp)</Label>
+                      <Input 
+                        id="amount" 
+                        placeholder="e.g. 5000000" 
+                        type="number" 
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea 
+                        id="notes" 
+                        placeholder="Describe the work completed..." 
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Attachment (Optional)</Label>
+                      <FileUploader 
+                        bucket="invoices"
+                        maxSizeMB={5}
+                        acceptedTypes="image/*,application/pdf"
+                        onUploadComplete={(url) => setAttachmentUrl(url)}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-4 border rounded-md p-4 bg-slate-50 dark:bg-slate-900/50">
+                    <h3 className="font-semibold border-b pb-2">Invoice Preview</h3>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <span className="text-muted-foreground">Project:</span>
+                      <span className="col-span-2 font-medium">{selectedProject?.title}</span>
+                      
+                      <span className="text-muted-foreground">Amount:</span>
+                      <span className="col-span-2 font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(Number(amount))}</span>
+                      
+                      <span className="text-muted-foreground">Notes:</span>
+                      <span className="col-span-2">{notes || '-'}</span>
+                      
+                      <span className="text-muted-foreground">Attachment:</span>
+                      <span className="col-span-2">{attachmentUrl ? 'Yes' : 'None'}</span>
+                    </div>
+                    <div className="pt-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                      Please double check the details before submitting.
+                    </div>
+                  </div>
+                )}
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={submitInvoice.isPending} className="bg-emerald-600 hover:bg-emerald-700 w-full">
-                  {submitInvoice.isPending ? "Submitting..." : "Submit Invoice"}
+              <DialogFooter className="gap-2 sm:gap-0">
+                {showPreview && (
+                  <Button type="button" variant="outline" onClick={() => setShowPreview(false)}>
+                    Back to Edit
+                  </Button>
+                )}
+                <Button type="submit" disabled={submitInvoice.isPending || (Number(amount) > remainingBudget)} className="bg-emerald-600 hover:bg-emerald-700">
+                  {submitInvoice.isPending ? "Submitting..." : showPreview ? "Confirm Submit" : "Preview Invoice"}
                 </Button>
               </DialogFooter>
             </form>

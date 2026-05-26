@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Plus, Filter, Kanban, List } from "lucide-react";
-import { useAdminProjects, useCreateProject } from "@/lib/api-client";
+import { Search, Plus, Filter, Kanban, List, Star } from "lucide-react";
+import { useAdminProjects, useCreateProject, useRateWorker } from "@/lib/api-client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -149,8 +149,93 @@ function ProjectCard({ project }: { project: Project }) {
             )}
           </div>
         </div>
+        
+        {isDone && (
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <RateWorkerDialog project={project} />
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function RateWorkerDialog({ project }: { project: Project }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [deadlineScore, setDeadlineScore] = useState(5);
+  const [qualityScore, setQualityScore] = useState(5);
+  const [communicationScore, setCommunicationScore] = useState(5);
+  const [review, setReview] = useState("");
+  
+  const rateWorker = useRateWorker();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    rateWorker.mutate({
+      projectId: project.id,
+      deadlineScore,
+      qualityScore,
+      communicationScore,
+      review,
+    }, {
+      onSuccess: () => {
+        toast.success("Worker rated successfully");
+        setIsOpen(false);
+      },
+      onError: (err: any) => {
+        toast.error(err.message || "Failed to submit rating");
+      }
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="w-full gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-900/20">
+          <Star className="h-4 w-4" /> Rate Worker
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Rate Worker Performance</DialogTitle>
+            <DialogDescription>
+              Evaluate the worker's performance for project <strong>{project.title}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Deadline</Label>
+              <Input type="range" min="1" max="5" value={deadlineScore} onChange={(e) => setDeadlineScore(Number(e.target.value))} />
+              <div className="text-xs text-right text-muted-foreground">{deadlineScore} / 5</div>
+            </div>
+            <div className="space-y-2">
+              <Label>Quality</Label>
+              <Input type="range" min="1" max="5" value={qualityScore} onChange={(e) => setQualityScore(Number(e.target.value))} />
+              <div className="text-xs text-right text-muted-foreground">{qualityScore} / 5</div>
+            </div>
+            <div className="space-y-2">
+              <Label>Communication</Label>
+              <Input type="range" min="1" max="5" value={communicationScore} onChange={(e) => setCommunicationScore(Number(e.target.value))} />
+              <div className="text-xs text-right text-muted-foreground">{communicationScore} / 5</div>
+            </div>
+            <div className="space-y-2">
+              <Label>Review (Optional)</Label>
+              <Textarea 
+                placeholder="Leave a review for the worker..." 
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={rateWorker.isPending}>
+              {rateWorker.isPending ? "Submitting..." : "Submit Rating"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
