@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ok, err } from "@/lib/api-helpers";
+import { cache, cacheKey, CACHE_TTL } from "@/lib/cache";
 
 /**
  * GET /api/admin/dashboard/stats
@@ -10,6 +11,10 @@ export async function GET(request: NextRequest) {
   try {
     const { error } = await requireRole("admin");
     if (error) return error;
+
+    // Serve from cache if available
+    const cached = cache.get(cacheKey.dashboardStats());
+    if (cached) return ok(cached);
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -217,6 +217,7 @@ export default function WorkerFinancePage() {
           </DialogContent>
         </Dialog>
       </div>
+      </div>
 
       <Card className="shadow-sm border-slate-200 dark:border-slate-800">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">

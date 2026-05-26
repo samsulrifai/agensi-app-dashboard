@@ -147,6 +147,8 @@ export default function WorkerPerformancePage() {
               </div>
             ))}
           </CardContent>
+        </Card>
+
         {/* Rating Trend Chart */}
         <Card className="col-span-7 shadow-sm border-slate-200 dark:border-slate-800">
           <CardHeader>

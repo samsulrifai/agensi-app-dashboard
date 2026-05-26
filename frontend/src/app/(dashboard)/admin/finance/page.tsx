@@ -10,6 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, FileCheck2, FileX2, Eye, Download, X, Wallet, FileText, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface Invoice {
   id: string;
@@ -17,6 +20,7 @@ interface Invoice {
   status: 'pending' | 'approved' | 'paid' | 'rejected';
   invoiceDate: string;
   dueDate?: string;
+  notes?: string;
   rejectionReason?: string;
   attachmentUrl?: string;
   worker: { fullName: string; email: string };
