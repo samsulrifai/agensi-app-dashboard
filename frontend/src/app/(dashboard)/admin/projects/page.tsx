@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -261,6 +261,14 @@ const COLUMNS: ColumnConfig[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminProjectsPage() {
+  return (
+    <Suspense fallback={<div className="space-y-6"><SkeletonCard className="h-20" /><SkeletonCard className="h-96" /></div>}>
+      <AdminProjectsPageInner />
+    </Suspense>
+  );
+}
+
+function AdminProjectsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [search, setSearch] = useState("");
